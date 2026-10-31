@@ -1,0 +1,95 @@
+# Local development stack: `docker compose up` brings up everything.
+x-backend: &backend
+  build:
+    context: ./backend
+    args:
+      REQUIREMENTS: requirements/dev.txt
+  env_file: .env
+  environment:
+    DJANGO_SETTINGS_MODULE: config.settings.dev
+  volumes:
+    - ./backend:/app
+  depends_on:
+    db:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+    objectstore:
+      condition: service_started
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-placement}
+      POSTGRES_USER: ${POSTGRES_USER:-placement}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      retries: 10
+
+  objectstore:
+    # S3-compatible object storage for resumes (CES §1.1). SeaweedFS, because MinIO's images are no
+    # longer publicly pullable. The app only speaks S3, so production can use AWS S3 / R2 instead.
+    image: chrislusf/seaweedfs:4.48
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - |
+        printf '{"identities":[{"name":"app","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}' "$$RESUME_S3_ACCESS_KEY" "$$RESUME_S3_SECRET_KEY" > /etc/s3.json
+        exec weed server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/s3.json -master.volumeSizeLimitMB=256 -volume.max=8
+    environment:
+      RESUME_S3_ACCESS_KEY: ${RESUME_S3_ACCESS_KEY:?set RESUME_S3_ACCESS_KEY in .env}
+      RESUME_S3_SECRET_KEY: ${RESUME_S3_SECRET_KEY:?set RESUME_S3_SECRET_KEY in .env}
+    volumes:
+      - objectdata:/data
+    ports:
+      - "8333:8333"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    <<: *backend
+    command: sh -c "python manage.py migrate --noinput && python manage.py runserver 0.0.0.0:8000"
+    ports:
+      - "8000:8000"
+
+  worker:
+    <<: *backend
+    command: celery -A config worker --loglevel=INFO
+
+  beat:
+    <<: *backend
+    command: celery -A config beat --loglevel=INFO --schedule /tmp/celerybeat-schedule
+
+  frontend:
+    image: node:22-alpine
+    working_dir: /app
+    command: sh -c "npm ci --no-audit --no-fund && npm run dev -- --hostname 0.0.0.0"
+    environment:
+      BACKEND_URL: http://backend:8000
+      NEXT_TELEMETRY_DISABLED: "1"
+    volumes:
+      - ./frontend:/app
+      - frontend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
+  objectdata:
+  frontend_node_modules:

@@ -1,0 +1,30 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Category standard — student dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Geist,system-ui,sans-serif;background:#F4F5F7;color:#111827;display:flex;font-variant-numeric:tabular-nums}
+aside{width:240px;background:#fff;border-right:1px solid #E5E7EB;padding:20px 14px}
+aside b{display:block;padding:0 10px 20px;font-size:15px}
+aside a{display:block;padding:8px 10px;border-radius:8px;font-size:14px;color:#4B5563;text-decoration:none}aside a.on{background:#EEF2FF;color:#4F46E5;font-weight:600}
+main{flex:1;padding:24px 30px}
+h1{font-size:22px}p.s{color:#6B7280;font-size:14px;margin-top:2px}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px}
+.c{background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:16px}
+.kp .c p{font-size:13px;color:#6B7280}.kp .c b{font-size:26px;display:block;margin-top:4px}
+.g{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-top:16px}
+.c h2{font-size:14px;margin-bottom:10px}
+table{width:100%;border-collapse:collapse;font-size:13px}th{text-align:left;color:#6B7280;font-weight:500;font-size:12px;padding:6px;border-bottom:1px solid #E5E7EB}td{padding:9px 6px;border-bottom:1px solid #F3F4F6}
+.b{font-size:11px;border-radius:999px;padding:2px 8px}.ok{background:#DCFCE7;color:#166534}.no{background:#FEE2E2;color:#991B1B}
+.skill{margin:8px 0;font-size:13px}.bar{height:6px;background:#E0E7FF;border-radius:3px;margin-top:4px}.bar i{display:block;height:6px;background:#4F46E5;border-radius:3px}
+</style></head><body>
+<aside><b>Placement Readiness</b><a class="on">Dashboard</a><a>My Profile</a><a>Skills &amp; Evidence</a><a>Placement Drives</a><a>Assessments</a><a>Preparation Plan</a><a>Progress</a></aside>
+<main><h1>Hello, Sana</h1><p class="s">Where you stand for upcoming drives.</p>
+<div class="kp"><div class="c"><p>Profile completion</p><b>83%</b></div><div class="c"><p>Verified evidence</p><b>9 / 14</b></div><div class="c"><p>Eligible drives</p><b>3</b></div><div class="c"><p>Readiness</p><b>68%</b></div></div>
+<div class="g"><div class="c"><h2>Upcoming drives</h2><table><tr><th>Drive</th><th>Eligibility</th><th>Match</th><th>Readiness</th></tr>
+<tr><td>Alpha Fintech · Backend</td><td><span class="b ok">Eligible</span></td><td>58%</td><td>72%</td></tr>
+<tr><td>Beta Analytics · Data</td><td><span class="b ok">Eligible</span></td><td>13%</td><td>54%</td></tr>
+<tr><td>Gamma QA · QA</td><td><span class="b no">Not eligible</span></td><td>41%</td><td>53%</td></tr></table></div>
+<div class="c"><h2>Skill profile</h2>
+<div class="skill">Python<div class="bar"><i style="width:75%"></i></div></div><div class="skill">Django<div class="bar"><i style="width:75%"></i></div></div><div class="skill">PostgreSQL<div class="bar"><i style="width:50%"></i></div></div><div class="skill">Docker<div class="bar"><i style="width:50%"></i></div></div><div class="skill">DSA<div class="bar"><i style="width:25%"></i></div></div></div></div>
+</main></body></html>

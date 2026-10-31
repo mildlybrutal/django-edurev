@@ -1,0 +1,21 @@
+[project]
+name = "placement-readiness-backend"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["**/migrations/*"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "DJ"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings.test"
+python_files = ["test_*.py"]
+addopts = "--strict-markers --ds=config.settings.test"
+
+[tool.coverage.run]
+source = ["apps"]
+omit = ["*/migrations/*", "*/tests/*"]

@@ -1,0 +1,51 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Grade Card — student dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Geist,system-ui,sans-serif;background:#EEF1F6;color:#1B2A4A;font-variant-numeric:tabular-nums}
+.top{height:64px;background:#1B2A4A;color:#fff;display:flex;align-items:center;padding:0 28px;gap:28px}
+.crest{width:34px;height:34px;border:2px solid #C9A227;border-radius:50%;display:grid;place-items:center;color:#C9A227;font-weight:700;font-size:13px}
+.top b{font-size:15px}.top nav{display:flex;gap:20px;font-size:14px;color:#C9D3E8}.top nav .on{color:#fff;border-bottom:2px solid #C9A227;padding-bottom:4px}
+.top .r{margin-left:auto;font-size:13px;color:#C9D3E8}
+main{padding:24px 28px;display:grid;grid-template-columns:1.3fr 1fr;gap:20px}
+.sheet{background:#fff;border:1px solid #CBD3E1;padding:20px 24px;position:relative}
+.sheet:before{content:"";position:absolute;inset:6px;border:1px solid #E3E8F1;pointer-events:none}
+.sheet h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#8C1D2F;font-weight:600}
+.sheet h1{font-size:22px;margin-top:4px}
+.meta{display:grid;grid-template-columns:repeat(4,1fr);margin-top:14px;border-top:1px solid #1B2A4A;border-bottom:1px solid #1B2A4A}
+.meta div{padding:10px 12px;border-right:1px solid #CBD3E1;font-size:12px;color:#55617A}.meta div:last-child{border:0}.meta b{display:block;font-size:22px;color:#1B2A4A}
+table{width:100%;border-collapse:collapse;margin-top:16px;font-size:13px}
+th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#55617A;text-align:left;padding:7px 10px;border-bottom:2px solid #1B2A4A}
+td{padding:9px 10px;border-bottom:1px solid #E3E8F1}td.g{font-weight:700}
+.v{color:#1F7A4D}.u{color:#9A5B00}
+.stamp{position:absolute;right:34px;top:26px;border:3px solid #8C1D2F;color:#8C1D2F;font-weight:700;letter-spacing:.12em;padding:6px 12px;transform:rotate(-8deg);font-size:13px;opacity:.85}
+.side{display:flex;flex-direction:column;gap:20px}
+.drv{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #E3E8F1;font-size:13px}
+.drv small{display:block;color:#55617A}.e{font-size:11px;font-weight:600;padding:2px 8px;border:1px solid}.e.ok{color:#1F7A4D;border-color:#1F7A4D}.e.no{color:#8C1D2F;border-color:#8C1D2F}
+.ready{font-size:11px;font-weight:700;letter-spacing:.1em;color:#8C1D2F;border:2px solid #8C1D2F;padding:2px 6px;transform:rotate(-4deg);display:inline-block}
+.gap{padding:10px 0;border-bottom:1px solid #E3E8F1;font-size:13px}.gap small{color:#55617A}
+</style></head><body>
+<div class="top"><div class="crest">DI</div><b>Placement Readiness</b>
+<nav><span class="on">Dashboard</span><span>Profile</span><span>Evidence</span><span>Drives</span><span>Assessments</span><span>Plan</span><span>Progress</span></nav>
+<span class="r">☀ / ☾ · Notifications (4) · Sana Student</span></div>
+<main>
+<section class="sheet"><span class="stamp">PROVISIONAL</span><h2>Statement of Readiness · 2026–27</h2><h1>Sana Student · DEMO0001 · CSE</h1>
+<div class="meta"><div>Overall readiness<b>68%</b></div><div>Verified evidence<b>9/14</b></div><div>Eligible drives<b>3</b></div><div>Profile<b>83%</b></div></div>
+<table><tr><th>Skill</th><th>Level</th><th>Verified</th><th>Evidence</th></tr>
+<tr><td>Python</td><td class="g">Advanced</td><td class="v">✓ Advanced</td><td>Project, assessment</td></tr>
+<tr><td>Django</td><td class="g">Advanced</td><td class="v">✓ Advanced</td><td>2 projects</td></tr>
+<tr><td>PostgreSQL</td><td class="g">Intermediate</td><td class="v">✓ Intermediate</td><td>Project</td></tr>
+<tr><td>Docker</td><td class="g">Intermediate</td><td class="u">◐ Beginner</td><td>GitHub, project</td></tr>
+<tr><td>Data Structures &amp; Algorithms</td><td class="g">Beginner</td><td class="u">○ none</td><td>LeetCode (unverified)</td></tr>
+<tr><td>Celery</td><td class="g">Intermediate</td><td class="v">✓ Intermediate</td><td>Project</td></tr></table></section>
+<div class="side">
+<section class="sheet"><h2>Drives</h2>
+<div class="drv"><div>Alpha Fintech<small>Backend Engineer · 20 Nov</small></div><span class="e ok">ELIGIBLE</span><span>58% match</span></div>
+<div class="drv"><div>Beta Analytics<small>Data Analyst · 30 Nov</small></div><span class="e ok">ELIGIBLE</span><span>13% match</span></div>
+<div class="drv"><div>Gamma QA Labs<small>QA Engineer · 28 Oct</small></div><span class="e no">NOT ELIGIBLE</span><span class="ready">READY</span></div></section>
+<section class="sheet"><h2>Remarks · gaps to clear</h2>
+<div class="gap"><b>1. DSA</b> Beginner → Advanced <small>· mandatory · high impact</small></div>
+<div class="gap"><b>2. REST APIs</b> None → Intermediate <small>· high impact</small></div>
+<div class="gap"><b>3. Docker</b> verify existing evidence <small>· medium</small></div></section>
+</div></main></body></html>

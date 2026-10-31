@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Manual Tab Board — student dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Geist,system-ui,sans-serif;background:#F4F2EC;color:#1D1D1F;display:flex;font-variant-numeric:tabular-nums}
+.board{flex:1;background:#2F3FB0;padding:26px 30px;display:flex;flex-direction:column;gap:18px}
+.hd{display:flex;justify-content:space-between;color:#fff}.hd h1{font-size:24px}.hd p{font-size:13px}.hd span{font-size:13px}
+.leaves{display:grid;grid-template-columns:1.2fr 1fr;gap:18px;flex:1}
+.leaf{background:rgba(255,255,255,.94);border-radius:2px;padding:18px 20px;position:relative;box-shadow:3px 3px 0 rgba(0,0,0,.18)}
+.leaf:before{content:"";position:absolute;left:10px;top:12px;width:8px;height:8px;border-radius:50%;background:#2F3FB0;box-shadow:0 18px 0 #2F3FB0}
+.leaf h2{font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-left:18px}
+.kp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.kp div{background:rgba(255,255,255,.94);padding:12px 14px;font-size:12px;color:#55565C;box-shadow:3px 3px 0 rgba(0,0,0,.18)}.kp b{display:block;font-size:26px;color:#1D1D1F}
+.row{display:flex;justify-content:space-between;padding:9px 0 9px 18px;border-bottom:1px solid #E5E3DA;font-size:13px}
+.ok{color:#3E8E2F;font-weight:600}.no{color:#C0392B;font-weight:600}
+.tabs{width:120px;display:flex;flex-direction:column}
+.tabs div{color:#fff;font-size:13px;font-weight:600;padding:12px 14px;writing-mode:horizontal-tb;border-bottom:2px solid #F4F2EC}
+.tabs .cur{width:136px;margin-left:-16px;padding-left:30px}
+</style></head><body>
+<div class="board"><div class="hd"><div><h1>Dashboard</h1><p>Sana Student · CSE 2027</p></div><span>☀ ☾ · Notifications 4</span></div>
+<div class="kp"><div>Profile completion<b>83%</b></div><div>Verified evidence<b>9/14</b></div><div>Eligible drives<b>3</b></div><div>Readiness<b>68%</b></div></div>
+<div class="leaves">
+<section class="leaf"><h2>Skill gaps · Alpha Fintech</h2>
+<div class="row"><span><b>DSA</b> Beginner → Advanced</span><span class="no">High</span></div>
+<div class="row"><span><b>REST APIs</b> None → Intermediate</span><span class="no">High</span></div>
+<div class="row"><span><b>Docker</b> verify evidence</span><span>Medium</span></div>
+<div class="row"><span><b>System Design</b> None → Beginner</span><span>Medium</span></div></section>
+<section class="leaf"><h2>Drives</h2>
+<div class="row"><span>Alpha Fintech · Backend</span><span class="ok">✓ Eligible · 58%</span></div>
+<div class="row"><span>Beta Analytics · Data</span><span class="ok">✓ Eligible · 13%</span></div>
+<div class="row"><span>Gamma QA · QA</span><span class="no">✕ CGPA · 41%</span></div></section>
+</div></div>
+<div class="tabs">
+<div class="cur" style="background:#2F3FB0;height:120px">Dashboard</div>
+<div style="background:#B84A12;height:70px">Profile</div>
+<div style="background:#E8B70A;height:150px;color:#1D1D1F">Evidence</div>
+<div style="background:#2E6E22;height:110px">Drives</div>
+<div style="background:#127A7A;height:80px">Assessments</div>
+<div style="background:#6B3FA0;height:130px">Plan</div>
+<div style="background:#8A4B2A;flex:1">Progress</div>
+</div>
+</body></html>

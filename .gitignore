@@ -28,3 +28,24 @@ Thumbs.db
 # Media and static files (optional)
 media/
 staticfiles/
+# Keep the env template
+!.env.example
+
+# Test / lint caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Personal tool settings
+.claude/settings.local.json
+
+# Keys and certificates
+*.pem
+*.key
+
+# Generated design-review screenshots
+.impeccable/review/
+
+# Project brief (not for redistribution)
+Project_Description.pdf

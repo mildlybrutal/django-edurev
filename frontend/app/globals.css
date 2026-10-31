@@ -1,0 +1,223 @@
+@import "tailwindcss";
+
+/*
+ * Module Booklets design tokens (see DESIGN.md). Components use semantic names (bg-surface,
+ * text-muted, bg-mod-teal…), never raw hex. Each token holds its light and dark value via
+ * light-dark(); `color-scheme` picks one. The theme switch sets html[data-theme]; without it
+ * the OS preference applies.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Ground: cool practice-sheet white / ink navy. */
+  --background: light-dark(#f6f7fb, #0b1224);
+  --surface: light-dark(#ffffff, #111a31);
+  --surface-muted: light-dark(#eef1f7, #18223c);
+  --surface-raised: light-dark(#ffffff, #16203a);
+  --border: light-dark(#dde2ec, #263252);
+  --border-strong: light-dark(#c4cbdb, #34426a);
+  --foreground: light-dark(#0f1a33, #e7ecf7);
+  --muted: light-dark(#4b5671, #a0abc6);
+
+  /* Committed cobalt: the shell rail and primary actions. */
+  --primary: light-dark(#1e3fae, #8ea8ff);
+  --primary-hover: light-dark(#18348f, #a9bdff);
+  --primary-foreground: light-dark(#ffffff, #0b1224);
+  --primary-soft: light-dark(#e6ecfb, #1a2750);
+  --rail: light-dark(#1e3fae, #132a72);
+  --rail-foreground: #ffffff;
+  --rail-muted: light-dark(#d3ddfa, #c3cff3);
+  --rail-hover: light-dark(#2a4cbd, #1b3585);
+  --rail-active: #ffffff;
+  --rail-active-foreground: light-dark(#1e3fae, #132a72);
+
+  /* Module hues own skill clusters. *-ink is text on a solid module fill. */
+  --mod-cobalt: light-dark(#1e3fae, #7f9cf5);
+  --mod-cobalt-soft: light-dark(#e6ecfb, #1a2750);
+  --mod-teal: light-dark(#0e7c86, #45b9c2);
+  --mod-teal-soft: light-dark(#e0f2f3, #0f2b33);
+  --mod-green: light-dark(#0f8a5f, #4cc293);
+  --mod-green-soft: light-dark(#e2f4ec, #10291f);
+  --mod-marigold: light-dark(#e8a317, #f2be4a);
+  --mod-marigold-soft: light-dark(#fdf3dc, #2e2410);
+  --mod-marigold-text: light-dark(#8a5a00, #f2be4a);
+  --mod-crimson: light-dark(#c2362b, #f17d71);
+  --mod-crimson-soft: light-dark(#fbe7e5, #321714);
+  --mod-ink-light: light-dark(#ffffff, #0b1224);
+  --mod-ink-dark: #1f1500;
+
+  /* Reserved: only "your next step". */
+  --next: light-dark(#6d28d9, #b49cfb);
+  --next-soft: light-dark(#efe8fd, #241a45);
+  --next-foreground: light-dark(#ffffff, #120a26);
+
+  /* Status. */
+  --success: light-dark(#127347, #5cc98f);
+  --success-soft: light-dark(#e3f4eb, #12291d);
+  --warning: light-dark(#8f5400, #f0b45a);
+  --warning-soft: light-dark(#fdf1dc, #2d2313);
+  --danger: light-dark(#b42318, #f2877d);
+  --danger-soft: light-dark(#fdeceb, #331b19);
+  --danger-foreground: light-dark(#ffffff, #1f0a08);
+  --info: light-dark(#17608a, #6cb8e0);
+  --info-soft: light-dark(#e4f1f8, #13242e);
+  --focus: light-dark(#1e3fae, #a9bdff);
+
+  /* Data viz: cobalt series on a recessive track and grid. */
+  --series-1: light-dark(#2a55d6, #6f93f4);
+  --series-2: light-dark(#0e7c86, #45b9c2);
+  --series-track: light-dark(#dbe4fb, #1f2d55);
+  --grid: light-dark(#e4e8f0, #263252);
+
+  --shadow-pop:
+    0 10px 30px -12px light-dark(rgb(15 26 51 / 0.28), rgb(0 0 0 / 0.6)),
+    0 2px 6px -2px light-dark(rgb(15 26 51 / 0.12), rgb(0 0 0 / 0.4));
+
+  /* Motion: short, exponential ease-out from a visible default. */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast: 150ms;
+  --dur: 200ms;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-surface-raised: var(--surface-raised);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-soft: var(--primary-soft);
+  --color-rail: var(--rail);
+  --color-rail-foreground: var(--rail-foreground);
+  --color-rail-muted: var(--rail-muted);
+  --color-rail-hover: var(--rail-hover);
+  --color-rail-active: var(--rail-active);
+  --color-rail-active-foreground: var(--rail-active-foreground);
+  --color-mod-cobalt: var(--mod-cobalt);
+  --color-mod-cobalt-soft: var(--mod-cobalt-soft);
+  --color-mod-teal: var(--mod-teal);
+  --color-mod-teal-soft: var(--mod-teal-soft);
+  --color-mod-green: var(--mod-green);
+  --color-mod-green-soft: var(--mod-green-soft);
+  --color-mod-marigold: var(--mod-marigold);
+  --color-mod-marigold-soft: var(--mod-marigold-soft);
+  --color-mod-marigold-text: var(--mod-marigold-text);
+  --color-mod-crimson: var(--mod-crimson);
+  --color-mod-crimson-soft: var(--mod-crimson-soft);
+  --color-mod-ink-light: var(--mod-ink-light);
+  --color-mod-ink-dark: var(--mod-ink-dark);
+  --color-next: var(--next);
+  --color-next-soft: var(--next-soft);
+  --color-next-foreground: var(--next-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-series-1: var(--series-1);
+  --color-series-2: var(--series-2);
+  --color-series-track: var(--series-track);
+  --color-grid: var(--grid);
+  --shadow-pop: var(--shadow-pop);
+  --ease-out: var(--ease-out);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --animate-toast-in: toast-in var(--dur) var(--ease-out);
+  --animate-pop-in: pop-in var(--dur-fast) var(--ease-out);
+  --animate-meter: meter-grow 220ms var(--ease-out);
+  --animate-drawer-in: drawer-in var(--dur) var(--ease-out);
+  --animate-fade-in: fade-in var(--dur) var(--ease-out);
+  --animate-radar-in: fade-in var(--dur) var(--ease-out);
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.98);
+  }
+}
+@keyframes meter-grow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* Every number in the app is tabular, so columns of figures line up. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Browser surfaces carry the palette too. */
+::selection {
+  background: var(--primary-soft);
+  color: var(--foreground);
+}
+html {
+  accent-color: var(--primary);
+  caret-color: var(--primary);
+  scrollbar-color: var(--border-strong) transparent;
+}
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+a {
+  text-underline-offset: 3px;
+}
+table,
+input[type="number"],
+time {
+  font-variant-numeric: tabular-nums;
+}
+dialog::backdrop {
+  background: rgb(8 14 31 / 0.55);
+}
+dialog[open] {
+  animation: pop-in var(--dur) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,70 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>Module Booklets — student dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Geist,system-ui,sans-serif;background:#F6F7FB;color:#141A2E;display:flex;font-variant-numeric:tabular-nums}
+.rail{width:232px;background:#1E3FAE;color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:4px}
+.brand{font-weight:800;font-size:16px;letter-spacing:-.01em;padding:0 10px 18px}.brand small{display:block;font-weight:500;color:#DCE4FF;font-size:12px}
+.rail a{display:flex;justify-content:space-between;color:#DCE4FF;text-decoration:none;font-size:14px;padding:9px 10px;border-radius:8px}
+.rail a.on{background:#fff;color:#1E3FAE;font-weight:600}
+.rail .n{font-size:11px;color:#fff}
+main{flex:1;padding:22px 30px;display:flex;flex-direction:column;gap:18px}
+header{display:flex;align-items:center;justify-content:space-between}
+h1{font-size:24px;font-weight:700;letter-spacing:-.02em}h1+p{color:#5A6178;font-size:14px;margin-top:2px}
+.tools{display:flex;gap:10px;align-items:center}
+.seg{display:flex;background:#E6E9F2;border-radius:999px;padding:3px}.seg span{font-size:12px;padding:5px 10px;border-radius:999px}.seg .on{background:#fff;font-weight:600}
+.bell{font-size:13px;background:#fff;border:1px solid #E1E5EF;border-radius:8px;padding:7px 10px}.bell b{background:#E8A317;color:#141A2E;border-radius:999px;padding:1px 6px;margin-left:6px;font-size:11px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.k{background:#fff;border:1px solid #E1E5EF;border-radius:12px;padding:14px 16px;position:relative;overflow:hidden}
+.k:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c)}
+.k p{font-size:12px;color:#5A6178}.k strong{font-size:28px;font-weight:700;letter-spacing:-.02em;display:block;margin-top:4px}.k i{font-style:normal;font-size:12px;color:#5A6178}
+.grid{display:grid;grid-template-columns:1.25fr 1fr;gap:18px;flex:1;min-height:0}
+.card{background:#fff;border:1px solid #E1E5EF;border-radius:12px;padding:16px 18px}
+.card h2{font-size:14px;font-weight:600;display:flex;justify-content:space-between}.card h2 span{font-weight:500;color:#5A6178;font-size:12px}
+.mods{display:flex;flex-direction:column;gap:9px;margin-top:12px}
+.mod{display:grid;grid-template-columns:62px 1fr 170px;border-radius:10px;overflow:hidden;border:1px solid #E1E5EF}
+.spine{background:var(--c);color:#fff;font-weight:800;font-size:20px;display:flex;flex-direction:column;justify-content:center;align-items:center;letter-spacing:-.02em}
+.spine small{font-size:9px;font-weight:600;letter-spacing:.08em}
+.mod .b{padding:9px 12px}.mod .b b{font-size:14px}.mod .b p{font-size:12px;color:#5A6178;margin-top:2px}
+.mod .r{padding:9px 12px;font-size:12px;color:#5A6178;border-left:1px solid #EEF0F5}
+.bar{height:6px;background:#E6E9F2;border-radius:3px;margin-top:6px}.bar i{display:block;height:6px;border-radius:3px;background:var(--c)}
+.next{outline:2px solid #6D28D9;outline-offset:-2px}.tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;color:#fff;background:#6D28D9;border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}th{text-align:left;font-size:11px;color:#5A6178;font-weight:500;padding:6px 8px;border-bottom:1px solid #E1E5EF}td{padding:9px 8px;border-bottom:1px solid #EEF0F5}
+.ok{color:#0F8A5F;font-weight:600}.no{color:#C2362B;font-weight:600}.pill{font-size:11px;border-radius:999px;padding:2px 8px;background:#E3EAFF;color:#1E3FAE}
+.right{display:flex;flex-direction:column;gap:18px}
+.radar{display:flex;gap:18px;align-items:center;margin-top:8px}
+.dims{font-size:13px;display:grid;grid-template-columns:auto auto;gap:6px 18px}.dims b{text-align:right}
+.toast{position:absolute;right:28px;bottom:24px;background:#141A2E;color:#fff;border-radius:10px;padding:12px 16px;font-size:13px;display:flex;gap:10px;align-items:center;box-shadow:0 8px 24px rgba(20,26,46,.25)}.toast b{color:#7EE2B8}
+</style></head><body>
+<nav class="rail"><div class="brand">Placement Readiness<small>Student</small></div>
+<a class="on" href="#">Dashboard</a><a href="#">My Profile</a><a href="#">Skills &amp; Evidence <span class="n">17</span></a><a href="#">Placement Drives <span class="n">3</span></a><a href="#">Assessments</a><a href="#">Preparation Plan</a><a href="#">Progress</a></nav>
+<main>
+<header><div><h1>Good morning, Sana</h1><p>CSE · Class of 2027 · 3 drives open for registration</p></div>
+<div class="tools"><div class="seg"><span>☀ Light</span><span class="on">◐ System</span><span>☾ Dark</span></div><span class="bell">Notifications<b>4</b></span></div></header>
+<section class="kpis">
+<div class="k" style="--c:#1E3FAE"><p>Profile completion</p><strong>83%</strong><i>Add LeetCode to finish</i></div>
+<div class="k" style="--c:#0F8A5F"><p>Verified evidence</p><strong>9 / 14</strong><i>2 waiting for your mentor</i></div>
+<div class="k" style="--c:#E8A317"><p>Eligible drives</p><strong>3</strong><i>of 4 active</i></div>
+<div class="k" style="--c:#0E7C86"><p>Readiness</p><strong>68%</strong><i>Ready at 70%</i></div>
+</section>
+<div class="grid">
+<section class="card"><h2>Your preparation modules<span>Alpha Fintech · drive in 21 days · plan uses 19</span></h2>
+<div class="mods">
+<div class="mod next" style="--c:#C2362B"><div class="spine"><small>MODULE</small>01</div><div class="b"><b>Data Structures &amp; Algorithms<span class="tag">NEXT</span></b><p>Beginner → Advanced · mandatory · High impact</p></div><div class="r">Checkpoint 26 Oct<div class="bar"><i style="width:30%"></i></div></div></div>
+<div class="mod" style="--c:#1E3FAE"><div class="spine"><small>MODULE</small>02</div><div class="b"><b>REST APIs</b><p>None → Intermediate · High impact</p></div><div class="r">Checkpoint 2 Nov<div class="bar"><i style="width:0%"></i></div></div></div>
+<div class="mod" style="--c:#0E7C86"><div class="spine"><small>MODULE</small>03</div><div class="b"><b>Docker</b><p>Intermediate · verify with mentor</p></div><div class="r">Checkpoint 5 Nov<div class="bar"><i style="width:60%"></i></div></div></div>
+<div class="mod" style="--c:#0F8A5F"><div class="spine"><small>MODULE</small>04</div><div class="b"><b>System Design</b><p>None → Beginner · Medium impact</p></div><div class="r">Checkpoint 9 Nov<div class="bar"><i style="width:0%"></i></div></div></div>
+</div></section>
+<div class="right">
+<section class="card"><h2>Readiness<span>scoring v1</span></h2>
+<div class="radar"><svg width="170" height="150" viewBox="0 0 170 150"><polygon points="85,10 160,75 85,140 10,75" fill="none" stroke="#E1E5EF"/><polygon points="85,45 125,75 85,110 45,75" fill="none" stroke="#E1E5EF"/><polygon points="85,35 140,75 85,118 52,75" fill="#1E3FAE" fill-opacity=".12" stroke="#1E3FAE" stroke-width="2"/></svg>
+<div class="dims"><span>Technical</span><b>58%</b><span>Aptitude</span><b>75%</b><span>Communication</span><b>69%</b><span>Project depth</span><b>100%</b><span>Coding activity</span><b>62%</b></div></div></section>
+<section class="card"><h2>Upcoming drives<span>Eligibility and match shown separately</span></h2>
+<table><tr><th>Drive</th><th>Eligibility</th><th>Match</th><th>Registration</th></tr>
+<tr><td>Alpha Fintech · Backend</td><td class="ok">✓ Eligible</td><td>58%</td><td><span class="pill">registered</span></td></tr>
+<tr><td>Beta Analytics · Data</td><td class="ok">✓ Eligible</td><td>13%</td><td>Open</td></tr>
+<tr><td>Gamma QA · QA Engineer</td><td class="no">✕ CGPA</td><td>41%</td><td>—</td></tr></table></section>
+</div></div>
+<div class="toast"><b>✓</b> Evidence verified by Prof. Faculty · DSA practice set</div>
+</main></body></html>

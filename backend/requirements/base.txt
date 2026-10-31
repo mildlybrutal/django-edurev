@@ -1,0 +1,12 @@
+# Runtime dependencies (direct, pinned). Python 3.12.
+Django==5.2.18                      # CES §1.1: Django 5.x LTS
+djangorestframework==3.18.3         # API layer
+djangorestframework_simplejwt==5.5.1  # JWT auth (CES: SimpleJWT on Path P3)
+drf-spectacular==0.30.0             # OpenAPI 3 schema at /api/v1/schema/
+psycopg[binary]==3.3.6              # PostgreSQL driver
+celery==5.6.3                       # background jobs + beat
+redis==8.1.0                        # cache backend + Celery broker client
+django-environ==0.14.0              # env-var configuration
+gunicorn==26.2.0                    # production WSGI server
+django-storages[s3]==1.14.6        # resumes in S3-compatible object storage (CES §1.1)
+boto3==1.43.116                    # S3 client used by django-storages
