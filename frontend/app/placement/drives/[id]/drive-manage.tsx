@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { FileUp } from "lucide-react";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BarList } from "@/components/charts/bar-list";
 import { EvaluationView } from "@/components/domain/evaluation";
@@ -20,7 +21,7 @@ import { DriveStatusBadge, EligibilityBadge, RegistrationBadge } from "@/compone
 import { Table, Td, Th } from "@/components/ui/table";
 import { Tabs } from "@/components/ui/tabs";
 import { api, unwrap, type Schemas } from "@/lib/api/client";
-import { del, get, post } from "@/lib/api/request";
+import { del, get, post, upload } from "@/lib/api/request";
 import type { Evaluation, Funnel, JDState, MatchList, SupplyDemand } from "@/lib/api/types";
 
 type Drive = Schemas["Drive"];
@@ -384,6 +385,17 @@ function RoleTemplate({ drive, editable }: { drive: Drive; editable: boolean }) 
   );
 }
 
+const JD_ACCEPT =
+  ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+const JD_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Client-side pre-check; the server re-validates the file by its content. */
+function jdFileProblem(file: File): string | null {
+  if (file.size > JD_MAX_BYTES) return "The JD file must be 5 MB or smaller.";
+  if (!/\.(pdf|docx|txt)$/i.test(file.name)) return "Upload the JD as a PDF, Word (.docx) or .txt file.";
+  return null;
+}
+
 function JDPanel({ drive }: { drive: Drive }) {
   const queryClient = useQueryClient();
   const jd = useQuery({
@@ -398,12 +410,28 @@ function JDPanel({ drive }: { drive: Drive }) {
     mutationFn: () => post(`/api/v1/drives/${drive.id}/jd/`, { text }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["drive", drive.id] }),
   });
+  const fileInput = useRef<HTMLInputElement>(null);
+  const sendFile = useMutation({
+    meta: { toast: "JD file read", toastBody: "Its text is shown on the left; processing runs in the background." },
+    mutationFn: (file: File) => {
+      const problem = jdFileProblem(file);
+      if (problem) throw new Error(problem);
+      const form = new FormData();
+      form.append("file", file);
+      return upload<JDState>(`/api/v1/drives/${drive.id}/jd/`, form);
+    },
+    onSuccess: () => {
+      setText(null);
+      return queryClient.invalidateQueries({ queryKey: ["drive", drive.id] });
+    },
+  });
+  const busy = submit.isPending || sendFile.isPending;
   const editable = drive.status === "draft" || drive.status === "published";
   return (
     <div className="grid gap-5 xl:grid-cols-2">
       <Card>
         <CardHeader
-          title="Paste the company's job description"
+          title="Paste or upload the company's job description"
           description="Processing is deterministic: it matches the text against the institutional skill taxonomy and common eligibility phrasing. No AI is involved, and you review everything before it is applied."
         />
         <CardBody className="flex flex-col gap-3">
@@ -415,10 +443,30 @@ function JDPanel({ drive }: { drive: Drive }) {
             disabled={!editable}
           />
           {submit.error ? <FormError message={errorMessage(submit.error)} /> : null}
+          {sendFile.error ? <FormError message={errorMessage(sendFile.error)} /> : null}
           {editable && (
-            <Button onClick={() => submit.mutate()} disabled={!text.trim() || submit.isPending} className="self-start">
-              Process JD
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={() => submit.mutate()} disabled={!text.trim() || busy}>
+                Process JD
+              </Button>
+              <input
+                ref={fileInput}
+                type="file"
+                accept={JD_ACCEPT}
+                className="sr-only"
+                aria-label="JD file (PDF, Word or text)"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) sendFile.mutate(file);
+                  e.target.value = "";
+                }}
+              />
+              <Button variant="secondary" onClick={() => fileInput.current?.click()} disabled={busy}>
+                <FileUp aria-hidden="true" className="size-4" />
+                {sendFile.isPending ? "Reading file…" : "Upload PDF, Word or .txt"}
+              </Button>
+              <p className="text-xs text-muted">Scanned PDFs have no text to read; paste the text instead.</p>
+            </div>
           )}
         </CardBody>
       </Card>

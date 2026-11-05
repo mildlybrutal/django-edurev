@@ -145,3 +145,59 @@ def test_gap_frequency_counts_students_not_gap_rows(make_student, make_drive, ta
     assert row["students"] == 1
     assert row["missing"] == 1 and row["high_impact"] <= 1
     assert row["cluster"] == taxonomy("Docker").cluster.slug
+
+
+def test_department_comparison_averages_latest_readiness_per_department(make_student, taxonomy, give_evidence):
+    from apps.readiness.services import compute_general_snapshot
+
+    strong = make_student(dept="CSE")
+    give_evidence(strong, SourceType.PROJECT, "API", [(taxonomy("Django"), INT)], verified=True)
+    weak = make_student(dept="CSE")
+    make_student(dept="ECE")  # no snapshot yet
+    a, b = compute_general_snapshot(strong), compute_general_snapshot(weak)
+    rows = {r["department"]: r for r in services.department_comparison(strong.institution_id)}
+    assert rows["CSE"]["students"] == 2
+    assert rows["CSE"]["average_readiness"] == pytest.approx((float(a.overall) + float(b.overall)) / 2, abs=0.1)
+    # A student without a snapshot is counted but not averaged in as 0.
+    assert (rows["ECE"]["students"], rows["ECE"]["average_readiness"], rows["ECE"]["ready_percent"]) == (1, None, None)
+
+
+def test_training_effectiveness_splits_change_by_plan_engagement(make_student, taxonomy, give_evidence):
+    from datetime import date
+
+    from apps.planning.models import ItemStatus, PlanItem, PreparationPlan
+    from apps.readiness.services import compute_general_snapshot
+
+    def plan(student, done, total):
+        p = PreparationPlan.objects.create(
+            institution_id=student.institution_id,
+            student=student,
+            title="Plan",
+            start_date=date(2026, 11, 1),
+            end_date=date(2026, 11, 30),
+        )
+        for i in range(total):
+            PlanItem.objects.create(
+                plan=p,
+                title=f"Task {i}",
+                start_date=date(2026, 11, 1),
+                due_date=date(2026, 11, 7),
+                order=i,
+                status=ItemStatus.DONE if i < done else ItemStatus.TODO,
+            )
+
+    engaged, idle, once = make_student(), make_student(), make_student()
+    for s in (engaged, idle, once):
+        compute_general_snapshot(s)
+    give_evidence(engaged, SourceType.PROJECT, "API", [(taxonomy("Django"), INT)], verified=True)
+    compute_general_snapshot(engaged)  # readiness rose after new verified evidence
+    compute_general_snapshot(idle)  # no new evidence: no change
+    plan(engaged, done=2, total=3)
+    plan(idle, done=1, total=3)
+
+    report = services.training_effectiveness(engaged.institution_id)
+    assert report["students_with_history"] == 2  # `once` has a single snapshot, so no change to measure
+    assert report["plan_engaged"]["students"] == 1 and report["not_engaged"]["students"] == 1
+    assert report["plan_engaged"]["average_change"] > 0
+    assert report["not_engaged"]["average_change"] == 0
+    assert "not proof" in report["note"]

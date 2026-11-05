@@ -116,7 +116,7 @@ Students see non-draft drives only. Management is O/H.
 | POST, DELETE | `{id}/requirements/`, `{id}/requirements/{skill_id}/` | O/H | Set / remove a skill requirement |
 | POST, DELETE | `{id}/eligibility-rules/`, `{id}/eligibility-rules/{rule_type}/` | O/H | `min_cgpa`, `max_active_backlogs`, `department_in`, `graduation_year_in` |
 | POST | `{id}/apply-role/` | O/H | Seed requirements from a target role |
-| GET/POST | `{id}/jd/` | O/H | Submit JD text (202; processed on the worker) / read status and extraction |
+| GET/POST | `{id}/jd/` | O/H | Submit JD `text` (JSON) or a JD `file` (multipart: PDF, DOCX or TXT, ≤ 5 MB; its text is extracted and becomes the JD). 202; processed on the worker. GET reads status and extraction |
 | POST | `{id}/jd/apply/` | O/H | Apply the officer-reviewed subset of the extraction |
 | POST | `{id}/transition/` | O/H | `published` (runs matching + notifies students), `registration_closed`, `shortlisting`, `completed`, `cancelled` |
 | POST/GET | `{id}/match/` | O/H | Start the background matching job (202) / list results with eligibility and compatibility side by side (`?eligible=`, `?registered=`, `?min_compatibility=`, `?q=`) |

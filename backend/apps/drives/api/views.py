@@ -4,6 +4,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 
@@ -11,6 +12,7 @@ from apps.accounts.roles import Role, has_role
 from apps.core.api import service_call
 from apps.core.models import BackgroundJob
 from apps.drives import services
+from apps.drives.jd_files import JDFileError, extract_jd_text
 from apps.drives.models import (
     Company,
     Drive,
@@ -127,7 +129,15 @@ class DriveUpdateSerializer(serializers.Serializer):
 
 
 class JDInput(serializers.Serializer):
-    text = serializers.CharField()
+    """Either pasted `text` (JSON) or an uploaded `file` (multipart: PDF, DOCX or TXT)."""
+
+    text = serializers.CharField(required=False)
+    file = serializers.FileField(required=False)
+
+    def validate(self, attrs):
+        if bool(attrs.get("text", "").strip()) == bool(attrs.get("file")):
+            raise serializers.ValidationError("Paste the JD text or upload a JD file (one of the two).")
+        return attrs
 
 
 class JDApplySkill(serializers.Serializer):
@@ -331,8 +341,8 @@ class DriveViewSet(viewsets.ModelViewSet):
 
     # --- JD ---------------------------------------------------------------------------------
 
-    @extend_schema(request=JDInput, responses=DriveSerializer)
-    @action(detail=True, methods=["get", "post"])
+    @extend_schema(request={"application/json": JDInput, "multipart/form-data": JDInput}, responses=DriveSerializer)
+    @action(detail=True, methods=["get", "post"], parser_classes=[JSONParser, MultiPartParser])
     def jd(self, request, pk=None):
         drive = self.get_object()
         if request.method == "GET":
@@ -341,7 +351,10 @@ class DriveViewSet(viewsets.ModelViewSet):
             )
         data = JDInput(data=request.data)
         data.is_valid(raise_exception=True)
-        _drive_error(services.submit_jd, drive, data.validated_data["text"])
+        text = data.validated_data.get("text")
+        if text is None:
+            text = service_call(extract_jd_text, data.validated_data["file"], error_types=(JDFileError,))
+        _drive_error(services.submit_jd, drive, text)
         return Response(
             {"status": drive.jd_status, "text": drive.job_description, "extraction": {}},
             status=status.HTTP_202_ACCEPTED,

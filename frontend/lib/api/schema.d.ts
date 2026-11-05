@@ -2322,8 +2322,11 @@ export interface components {
             weight: number;
             is_mandatory: boolean;
         };
+        /** @description Either pasted `text` (JSON) or an uploaded `file` (multipart: PDF, DOCX or TXT). */
         JDInput: {
-            text: string;
+            text?: string;
+            /** Format: uri */
+            file?: string | null;
         };
         /**
          * @description * `none` - No JD
@@ -3815,10 +3818,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["JDInput"];
-                "application/x-www-form-urlencoded": components["schemas"]["JDInput"];
                 "multipart/form-data": components["schemas"]["JDInput"];
             };
         };
