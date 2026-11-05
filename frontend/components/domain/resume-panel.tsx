@@ -24,10 +24,15 @@ export function ResumeViewerButton({
   path,
   label = "View resume",
   variant = "secondary",
+  docLabel = "Resume",
+  frameTitle = "Resume PDF",
 }: {
   path: string;
   label?: string;
   variant?: "secondary" | "ghost" | "primary";
+  /** What the dialog is showing; certificates reuse this viewer. */
+  docLabel?: string;
+  frameTitle?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const [state, setState] = useState<{ url?: string; error?: string; loading?: boolean }>({});
@@ -49,7 +54,7 @@ export function ResumeViewerButton({
       </Button>
       <dialog
         ref={dialog}
-        aria-label="Resume"
+        aria-label={docLabel}
         onClose={() => setState({})}
         className="m-auto h-[min(90vh,1000px)] w-[min(92vw,900px)] max-w-none overflow-hidden rounded-xl border border-border bg-surface p-0 text-foreground shadow-pop"
       >
@@ -57,7 +62,7 @@ export function ResumeViewerButton({
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
             <p className="flex items-center gap-2 text-sm font-medium">
               <FileText aria-hidden="true" className="size-4 text-muted" />
-              Resume
+              {docLabel}
             </p>
             <div className="flex items-center gap-2">
               {state.url && (
@@ -73,7 +78,7 @@ export function ResumeViewerButton({
               <button
                 type="button"
                 onClick={() => dialog.current?.close()}
-                aria-label="Close resume"
+                aria-label={`Close ${docLabel.toLowerCase()}`}
                 className="rounded-md p-1.5 text-muted hover:bg-surface-muted hover:text-foreground"
               >
                 <X aria-hidden="true" className="size-4" />
@@ -87,7 +92,7 @@ export function ResumeViewerButton({
                 <FormError message={state.error} />
               </div>
             )}
-            {state.url && <iframe src={state.url} title="Resume PDF" className="h-full w-full border-0" />}
+            {state.url && <iframe src={state.url} title={frameTitle} className="h-full w-full border-0" />}
           </div>
         </div>
       </dialog>

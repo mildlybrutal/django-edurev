@@ -68,3 +68,25 @@ class EvidenceSkillTag(TenantModel):
 
     def __str__(self):
         return f"{self.evidence_id}: {self.skill_id}@{self.claimed_level}"
+
+
+def _evidence_file_storage():
+    from django.core.files.storage import storages
+
+    return storages["resumes"]
+
+
+class EvidenceFile(TenantModel):
+    """The uploaded certificate behind a certification evidence item (PDF or image). Stored in the
+    same private object-storage bucket as resumes and viewed only through short-lived signed URLs."""
+
+    evidence = models.OneToOneField(EvidenceItem, on_delete=models.CASCADE, related_name="file")
+    file = models.FileField(storage=_evidence_file_storage, max_length=300)
+    original_name = models.CharField(max_length=200)
+    content_type = models.CharField(max_length=50)
+    size = models.PositiveIntegerField()
+    sha256 = models.CharField(max_length=64)
+    uploaded_by = models.ForeignKey("accounts.User", null=True, on_delete=models.SET_NULL, related_name="+")
+
+    def __str__(self):
+        return self.original_name

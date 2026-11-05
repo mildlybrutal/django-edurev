@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { BarList } from "@/components/charts/bar-list";
 import { EvaluationView } from "@/components/domain/evaluation";
+import { ExportButton } from "@/components/domain/export-button";
 import { SkillPicker } from "@/components/domain/skill-picker";
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -682,6 +683,12 @@ function Matching({ drive }: { drive: Drive }) {
                 <input type="checkbox" checked={registered} onChange={(e) => setRegistered(e.target.checked)} />
                 Registered only
               </label>
+              <div className="ml-auto">
+                <ExportButton
+                  path={`/api/v1/drives/${drive.id}/export/?${params}`}
+                  filename={`${drive.company.name}-${drive.role_title}`}
+                />
+              </div>
             </div>
             {m.results.length === 0 ? (
               <CardBody>

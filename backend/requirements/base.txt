@@ -10,3 +10,4 @@ django-environ==0.14.0              # env-var configuration
 gunicorn==26.2.0                    # production WSGI server
 django-storages[s3]==1.14.6        # resumes in S3-compatible object storage (CES §1.1)
 boto3==1.43.116                    # S3 client used by django-storages
+openpyxl==3.1.5                     # Excel (.xlsx) export/import for placement-cell and faculty lists

@@ -3,7 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
+import { ExportButton } from "@/components/domain/export-button";
 import { PageHeader } from "@/components/shell/page-header";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -12,23 +14,33 @@ import { FormError, SelectField } from "@/components/ui/form";
 import { errorMessage, QueryState } from "@/components/ui/states";
 import { Table, Td, Th } from "@/components/ui/table";
 import { api, unwrap } from "@/lib/api/client";
-import { post } from "@/lib/api/request";
+import { download, post, qs, upload } from "@/lib/api/request";
 
 export function StudentsList() {
   const [q, setQ] = useState("");
   const [department, setDepartment] = useState("");
+  const [year, setYear] = useState("");
+  const [band, setBand] = useState("");
   const [page, setPage] = useState(1);
   const [adding, setAdding] = useState(false);
+  const [importing, setImporting] = useState(false);
   const departments = useQuery({
     queryKey: ["departments"],
     queryFn: async () => unwrap(await api.GET("/api/v1/students/departments/")),
   });
   const students = useQuery({
-    queryKey: ["students", q, department, page],
+    queryKey: ["students", q, department, year, page],
     queryFn: async () =>
       unwrap(
         await api.GET("/api/v1/students/", {
-          params: { query: { q: q || undefined, department: department || undefined, page } },
+          params: {
+            query: {
+              q: q || undefined,
+              department: department || undefined,
+              graduation_year: year ? Number(year) : undefined,
+              page,
+            },
+          },
         }),
       ),
   });
@@ -37,8 +49,16 @@ export function StudentsList() {
       <PageHeader
         title="Students"
         description="Academic records, skill profiles and readiness."
-        actions={<Button onClick={() => setAdding((a) => !a)}>{adding ? "Close" : "Add student"}</Button>}
+        actions={
+          <div className="flex gap-2">
+            <Button variant="secondary" onClick={() => setImporting((a) => !a)}>
+              {importing ? "Close import" : "Import from Excel"}
+            </Button>
+            <Button onClick={() => setAdding((a) => !a)}>{adding ? "Close" : "Add student"}</Button>
+          </div>
+        }
       />
+      {importing && <ImportStudents />}
       {adding && <AddStudent />}
       <Card>
         <div className="flex flex-wrap items-end gap-3 border-b border-border px-5 py-3">
@@ -66,6 +86,30 @@ export function StudentsList() {
               </option>
             ))}
           </SelectField>
+          <TextField
+            label="Graduation year"
+            inputMode="numeric"
+            value={year}
+            onChange={(e) => {
+              setYear(e.target.value.replace(/\D/g, "").slice(0, 4));
+              setPage(1);
+            }}
+            className="w-32"
+          />
+          <SelectField label="Readiness (export)" value={band} onChange={(e) => setBand(e.target.value)}>
+            <option value="">All</option>
+            <option value="0-40">Below 40%</option>
+            <option value="40-60">40–60%</option>
+            <option value="60-80">60–80%</option>
+            <option value="80-100">80–100%</option>
+            <option value="none">Not computed</option>
+          </SelectField>
+          <div className="ml-auto">
+            <ExportButton
+              path={`/api/v1/students/export/${qs({ q, department, graduation_year: year, band })}`}
+              filename="students"
+            />
+          </div>
         </div>
         <QueryState query={students}>
           {(p) =>
@@ -239,6 +283,116 @@ function AddStudent() {
             </Button>
           </div>
         </form>
+      </CardBody>
+    </Card>
+  );
+}
+
+type ImportResult = {
+  rows: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  errors: { row: number; registration_number: string; error: string }[];
+  applied: boolean;
+};
+
+/** Bulk import: validate (dry run) first, then apply. Nothing is written if any row is invalid. */
+function ImportStudents() {
+  const queryClient = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const send = useMutation({
+    mutationFn: (dryRun: boolean) => {
+      const form = new FormData();
+      form.append("file", file as File);
+      if (dryRun) form.append("dry_run", "true");
+      return upload<ImportResult>("/api/v1/students/import/", form);
+    },
+    onSuccess: (r) => {
+      setResult(r);
+      if (r.applied) queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+  });
+  const template = useMutation({
+    mutationFn: () => download("/api/v1/students/import/", "student-import-template.xlsx"),
+  });
+  return (
+    <Card>
+      <CardHeader
+        title="Import students from Excel"
+        description="Rows are matched on registration number: new numbers create students, existing ones update their academic record (and mark it confirmed)."
+        action={
+          <Button variant="ghost" size="sm" onClick={() => template.mutate()} disabled={template.isPending}>
+            Download template
+          </Button>
+        }
+      />
+      <CardBody className="flex flex-col gap-3">
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="student-import-file" className="text-sm font-medium">
+              Excel file (.xlsx)
+            </label>
+            <input
+              id="student-import-file"
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              onChange={(e) => {
+                setFile(e.target.files?.[0] ?? null);
+                setResult(null);
+              }}
+              className="text-sm file:mr-3 file:h-8 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm file:text-foreground hover:file:bg-surface-muted"
+            />
+          </div>
+          <Button variant="secondary" disabled={!file || send.isPending} onClick={() => send.mutate(true)}>
+            Validate
+          </Button>
+          <Button
+            disabled={!file || send.isPending || !result || result.applied || result.errors.length > 0}
+            onClick={() => send.mutate(false)}
+          >
+            Import {result && !result.applied ? `${result.created + result.updated} change(s)` : ""}
+          </Button>
+        </div>
+        {send.error ? <FormError message={errorMessage(send.error)} /> : null}
+        {template.error ? <FormError message={errorMessage(template.error)} /> : null}
+        {result && (
+          <div className="flex flex-col gap-2 text-sm">
+            <div className="flex flex-wrap gap-2">
+              {result.applied ? (
+                <Badge tone="success">Imported</Badge>
+              ) : (
+                <Badge tone="info">Validated, not yet imported</Badge>
+              )}
+              <Badge>{result.rows} rows</Badge>
+              <Badge tone="primary">{result.created} new</Badge>
+              <Badge tone="primary">{result.updated} updated</Badge>
+              <Badge>{result.unchanged} unchanged</Badge>
+              {result.errors.length > 0 && <Badge tone="danger">{result.errors.length} with errors</Badge>}
+            </div>
+            {result.errors.length > 0 && (
+              <Table caption="Rows with errors">
+                <thead>
+                  <tr>
+                    <Th>Row</Th>
+                    <Th>Registration number</Th>
+                    <Th>Problem</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {result.errors.map((e) => (
+                    <tr key={e.row}>
+                      <Td className="tabular-nums">{e.row}</Td>
+                      <Td className="tabular-nums">{e.registration_number || "—"}</Td>
+                      <Td>{e.error}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            )}
+          </div>
+        )}
       </CardBody>
     </Card>
   );

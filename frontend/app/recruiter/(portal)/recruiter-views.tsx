@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, type ReactNode } from "react";
-import { BriefcaseBusiness, CircleCheck } from "lucide-react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { BriefcaseBusiness, CircleCheck, Megaphone } from "lucide-react";
 import { AppFrame, CenteredMessage } from "@/components/shell/app-frame";
 import { ResumeViewerButton } from "@/components/domain/resume-panel";
 import { PageHeader } from "@/components/shell/page-header";
@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { TextField } from "@/components/ui/field";
-import { QueryState } from "@/components/ui/states";
+import { FormError, SelectField, TextAreaField } from "@/components/ui/form";
+import { errorMessage, QueryState } from "@/components/ui/states";
 import { RegistrationBadge } from "@/components/ui/status";
 import { Table, Td, Th } from "@/components/ui/table";
-import { get } from "@/lib/api/request";
+import { get, post } from "@/lib/api/request";
 import type { Candidate, CandidatePage } from "@/lib/api/types";
 import { useLogout, useRecruiterMe } from "@/lib/auth/session";
 
@@ -257,9 +258,115 @@ export function CandidateSearch({ driveId }: { driveId: number }) {
             </QueryState>
           </Card>
           {selected && <CandidateProfile driveId={driveId} id={selected} />}
+          <Broadcasts driveId={driveId} />
         </div>
       </div>
     </>
+  );
+}
+
+type Broadcast = {
+  id: number;
+  audience: "all" | "shortlisted";
+  title: string;
+  body: string;
+  recipient_count: number;
+  created_at: string;
+  sent_at: string | null;
+};
+
+/** Message the candidates of this drive. The server picks recipients from your access scope;
+ * you only ever see how many received it. Every send is logged for the placement cell. */
+function Broadcasts({ driveId }: { driveId: number }) {
+  const queryClient = useQueryClient();
+  const [audience, setAudience] = useState<Broadcast["audience"]>("all");
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const history = useQuery({
+    queryKey: ["recruiter", "broadcasts", driveId],
+    queryFn: () => get<Broadcast[]>(`/api/v1/recruiter/drives/${driveId}/broadcasts/`),
+  });
+  const send = useMutation({
+    meta: { toast: "Broadcast sent", toastBody: "Candidates will see it in their notifications." },
+    mutationFn: () => post<Broadcast>(`/api/v1/recruiter/drives/${driveId}/broadcasts/`, { audience, title, body }),
+    onSuccess: () => {
+      setTitle("");
+      setBody("");
+      queryClient.invalidateQueries({ queryKey: ["recruiter", "broadcasts", driveId] });
+    },
+  });
+  return (
+    <Card>
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Megaphone aria-hidden="true" className="size-4 text-primary" />
+            Broadcast to candidates
+          </span>
+        }
+        description="Sends an in-app notification to candidates in your access for this drive. Recipients are not listed back to you, and each send is logged."
+      />
+      <CardBody>
+        <form
+          className="flex flex-col gap-3"
+          onSubmit={(e: FormEvent) => {
+            e.preventDefault();
+            send.mutate();
+          }}
+        >
+          <SelectField
+            label="Audience"
+            value={audience}
+            onChange={(e) => setAudience(e.target.value as Broadcast["audience"])}
+          >
+            <option value="all">All candidates in my access</option>
+            <option value="shortlisted">Shortlisted candidates only</option>
+          </SelectField>
+          <TextField
+            label="Subject"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            maxLength={120}
+          />
+          <TextAreaField
+            label="Message"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            required
+            maxLength={2000}
+            placeholder="e.g. The pre-placement talk starts at 10:00 in the main auditorium."
+          />
+          {send.error ? <FormError message={errorMessage(send.error)} /> : null}
+          <div>
+            <Button type="submit" disabled={!title.trim() || !body.trim() || send.isPending}>
+              Send broadcast
+            </Button>
+          </div>
+        </form>
+      </CardBody>
+      <QueryState query={history}>
+        {(rows) =>
+          rows.length === 0 ? null : (
+            <ul className="divide-y divide-border border-t border-border">
+              {rows.map((b) => (
+                <li key={b.id} className="px-5 py-3 text-sm">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium">{b.title}</span>
+                    <Badge>{b.audience === "shortlisted" ? "Shortlisted" : "All candidates"}</Badge>
+                    <Badge tone={b.sent_at ? "success" : "warning"}>
+                      {b.sent_at ? `Delivered to ${b.recipient_count}` : "Sending…"}
+                    </Badge>
+                  </div>
+                  <p className="mt-1 whitespace-pre-line text-muted">{b.body}</p>
+                  <p className="mt-1 text-xs text-muted">{new Date(b.created_at).toLocaleString()}</p>
+                </li>
+              ))}
+            </ul>
+          )
+        }
+      </QueryState>
+    </Card>
   );
 }
 

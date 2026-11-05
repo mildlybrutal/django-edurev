@@ -177,10 +177,48 @@ export type StudentDashboard = {
   activity: { title: string; at: string; link: string }[];
 };
 
+export type StudentSummary = {
+  id: number;
+  name: string;
+  email: string;
+  roll_number: string;
+  department: string;
+  graduation_year: number;
+  cgpa: number;
+  active_backlogs: number;
+  academic_record_verified: boolean;
+  mentor: string | null;
+  readiness: number | null;
+  evidence_total: number;
+  evidence_verified: number;
+  evidence_pending: number;
+  evidence_rejected: number;
+  registrations: number;
+  eligible_drives: number;
+  plan_done: number;
+  plan_total: number;
+};
+
 export type FacultyDashboard = {
   mentees: number;
   pending_verifications: number;
-  students: { id: number; name: string; roll_number: string; department: string; readiness: number | null }[];
+  students: StudentSummary[];
+};
+
+/** GET /students/:id/drives — eligibility and compatibility/readiness are separate fields. */
+export type StudentDriveRow = {
+  drive_id: number;
+  company: string;
+  role: string;
+  drive_date: string | null;
+  drive_status: string;
+  registration_status: string;
+  registered_at: string;
+  is_eligible: boolean | null;
+  failed_rules: { rule: string; message: string }[];
+  compatibility: number | null;
+  readiness: number | null;
+  plan: { id: number; done: number; total: number } | null;
 };
 
 export type Band = { band: string; count: number; percent: number };

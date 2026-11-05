@@ -55,7 +55,7 @@ def ensure_bucket():
     ensure_bucket._done = True
 
 
-def signed_url(name, expires=None):
+def signed_url(name, expires=None, content_type="application/pdf"):
     """A time-limited URL the browser can open. For S3 backends the URL is signed against the
     public endpoint (the browser cannot reach the in-cluster hostname)."""
     expires = expires or getattr(settings, "RESUME_URL_EXPIRY_SECONDS", 300)
@@ -71,7 +71,7 @@ def signed_url(name, expires=None):
             name,
             expire=expires,
             parameters={
-                "ResponseContentType": "application/pdf",
+                "ResponseContentType": content_type,
                 "ResponseContentDisposition": "inline",
             },
         )

@@ -157,25 +157,30 @@ def _mentor(request, pk):
     return mentor
 
 
+def filter_students(qs, params):
+    if q := params.get("q"):
+        qs = qs.filter(
+            Q(roll_number__icontains=q)
+            | Q(user__first_name__icontains=q)
+            | Q(user__last_name__icontains=q)
+            | Q(user__email__icontains=q)
+        )
+    if dept := params.get("department"):
+        qs = qs.filter(department__code__iexact=dept)
+    if year := params.get("graduation_year"):
+        try:
+            qs = qs.filter(graduation_year=int(year))
+        except ValueError:
+            qs = qs.none()
+    return qs.order_by("roll_number")
+
+
 class StudentListView(ListAPIView):
     serializer_class = StudentSerializer
     permission_classes = [roles_required(*STAFF)]
 
     def get_queryset(self):
-        qs = selectors.visible_students(self.request.user)
-        params = self.request.query_params
-        if q := params.get("q"):
-            qs = qs.filter(
-                Q(roll_number__icontains=q)
-                | Q(user__first_name__icontains=q)
-                | Q(user__last_name__icontains=q)
-                | Q(user__email__icontains=q)
-            )
-        if dept := params.get("department"):
-            qs = qs.filter(department__code__iexact=dept)
-        if year := params.get("graduation_year"):
-            qs = qs.filter(graduation_year=year)
-        return qs.order_by("roll_number")
+        return filter_students(selectors.visible_students(self.request.user), self.request.query_params)
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -340,6 +345,61 @@ class ReadinessView(APIView):
         )
 
 
+class StudentDrivesView(APIView):
+    """GET /students/:id/drives — the drives a student registered for, with eligibility and
+    compatibility/readiness reported as separate fields, plus plan progress. Visible to the
+    student, their mentor and the placement cell."""
+
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(responses=OpenApiTypes.OBJECT)
+    def get(self, request, student_id):
+        from apps.drives.models import EligibilityResult, Registration
+        from apps.matching.models import MatchResult
+        from apps.planning.models import ItemStatus, PlanStatus, PreparationPlan
+
+        student = resolve_student(request, student_id)
+        registrations = list(
+            Registration.objects.filter(student=student).select_related("drive__company").order_by("-registered_at")
+        )
+        drive_ids = [r.drive_id for r in registrations]
+        eligibility = {e.drive_id: e for e in EligibilityResult.objects.filter(student=student, drive_id__in=drive_ids)}
+        matches = {m.drive_id: m for m in MatchResult.objects.filter(student=student, drive_id__in=drive_ids)}
+        plans = {
+            p.drive_id: p
+            for p in PreparationPlan.objects.filter(
+                student=student, drive_id__in=drive_ids, status=PlanStatus.ACTIVE
+            ).prefetch_related("items")
+        }
+        rows = []
+        for r in registrations:
+            e, m, p = eligibility.get(r.drive_id), matches.get(r.drive_id), plans.get(r.drive_id)
+            items = list(p.items.all()) if p else []
+            rows.append(
+                {
+                    "drive_id": r.drive_id,
+                    "company": r.drive.company.name,
+                    "role": r.drive.role_title,
+                    "drive_date": r.drive.drive_date,
+                    "drive_status": r.drive.status,
+                    "registration_status": r.status,
+                    "registered_at": r.registered_at,
+                    "is_eligible": e.is_eligible if e else None,
+                    "failed_rules": [x for x in e.reasons if not x.get("passed")] if e else [],
+                    "compatibility": float(m.compatibility) if m else None,
+                    "readiness": float(m.readiness_overall) if m and m.readiness_overall is not None else None,
+                    "plan": {
+                        "id": p.pk,
+                        "done": sum(1 for i in items if i.status == ItemStatus.DONE),
+                        "total": len(items),
+                    }
+                    if p
+                    else None,
+                }
+            )
+        return Response(rows)
+
+
 def snapshot_data(snap):
     return {
         "id": snap.pk,
@@ -482,3 +542,120 @@ class ResumeView(APIView):
             raise PermissionDenied("Students manage their own resume.")
         services.delete_resume(student, actor=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+EXPORT_PARAMS = [
+    OpenApiParameter("q", str),
+    OpenApiParameter("department", str),
+    OpenApiParameter("graduation_year", int),
+    OpenApiParameter("band", str, description="Readiness band: 80-100, 60-80, 40-60, 0-40 or none"),
+    OpenApiParameter("academic_verified", bool),
+]
+STUDENT_COLUMNS = [
+    ("Registration number", "roll_number"),
+    ("Name", "name"),
+    ("Email", "email"),
+    ("Department", "department"),
+    ("Graduation year", "graduation_year"),
+    ("CGPA", "cgpa"),
+    ("Active backlogs", "active_backlogs"),
+    ("Academics confirmed", "academic_record_verified"),
+    ("Mentor", "mentor"),
+    ("Readiness % (general)", "readiness"),
+    ("Evidence items", "evidence_total"),
+    ("Verified evidence", "evidence_verified"),
+    ("Pending verification", "evidence_pending"),
+    ("Rejected evidence", "evidence_rejected"),
+    ("Drives registered", "registrations"),
+    ("Eligible for active drives", "eligible_drives"),
+    ("Plan tasks done", "plan_done"),
+    ("Plan tasks total", "plan_total"),
+]
+
+
+def _in_band(readiness, band):
+    if band == "none":
+        return readiness is None
+    try:
+        low, high = (float(x) for x in band.split("-"))
+    except ValueError:
+        return True
+    return readiness is not None and low <= readiness < (high if high < 100 else 101)
+
+
+class StudentExportView(APIView):
+    """GET /students/export — Excel sheet of the students the user can see (placement cell: the
+    institution; faculty: their mentees), with the same filters as the list plus readiness band.
+    Each export is audited. Not available to recruiters."""
+
+    permission_classes = [roles_required(*STAFF)]
+
+    @extend_schema(parameters=EXPORT_PARAMS, responses={(200, "application/octet-stream"): OpenApiTypes.BINARY})
+    def get(self, request):
+        from apps.core.excel import workbook_response
+        from apps.reporting.services import student_summaries
+
+        params = request.query_params
+        qs = filter_students(selectors.visible_students(request.user), params)
+        if "academic_verified" in params:
+            qs = qs.filter(academic_record_verified=params["academic_verified"].lower() in ("1", "true", "yes"))
+        rows = student_summaries(qs)
+        if band := params.get("band"):
+            rows = [r for r in rows if _in_band(r["readiness"], band)]
+        record_audit(
+            actor=request.user,
+            action="students.export",
+            request=request,
+            after={"rows": len(rows), "filters": {k: v for k, v in params.items()}},
+        )
+        return workbook_response("students", [("Students", STUDENT_COLUMNS, rows)])
+
+
+class StudentImportView(APIView):
+    """Placement cell bulk import. GET — blank template. POST (multipart `file`, optional
+    `dry_run=true`) — validate every row; apply only if all rows are valid."""
+
+    permission_classes = [roles_required(*CELL)]
+    parser_classes = [MultiPartParser, FormParser]
+
+    @extend_schema(responses={(200, "application/octet-stream"): OpenApiTypes.BINARY})
+    def get(self, request):
+        from apps.core.excel import workbook_response
+        from apps.students.importing import COLUMNS, EXAMPLE
+
+        # The Students sheet is left empty on purpose: an example row there could match a real
+        # registration number and overwrite that student if the template were imported as is.
+        return workbook_response(
+            "student-import-template",
+            [
+                ("Students", [(c, c) for c, _ in COLUMNS], []),
+                (
+                    "Instructions",
+                    [("Column", "c"), ("Notes", "n"), ("Example", "e")],
+                    [{"c": c, "n": n, "e": EXAMPLE.get(c, "")} for c, n in COLUMNS],
+                ),
+            ],
+        )
+
+    @extend_schema(
+        request={
+            "multipart/form-data": {
+                "type": "object",
+                "properties": {"file": {"type": "string", "format": "binary"}, "dry_run": {"type": "boolean"}},
+            }
+        },
+        responses=OpenApiTypes.OBJECT,
+    )
+    def post(self, request):
+        from apps.core.excel import ExcelError
+        from apps.students.importing import import_students
+
+        uploaded = request.FILES.get("file")
+        if uploaded is None:
+            return Response({"detail": "Choose an .xlsx file to import."}, status=status.HTTP_400_BAD_REQUEST)
+        dry_run = str(request.data.get("dry_run", "")).lower() in ("1", "true", "yes")
+        try:
+            result = import_students(request.user.institution, uploaded, actor=request.user, dry_run=dry_run)
+        except ExcelError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(result, status=status.HTTP_200_OK)

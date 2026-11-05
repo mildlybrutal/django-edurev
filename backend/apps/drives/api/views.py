@@ -1,4 +1,5 @@
 from django.db.models import Max, Prefetch
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
@@ -411,6 +412,58 @@ class DriveViewSet(viewsets.ModelViewSet):
         if student is None:
             raise NotFound()
         return Response(evaluation_payload(drive, student, refresh=False))
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("eligible", bool),
+            OpenApiParameter("registered", bool),
+            OpenApiParameter("min_compatibility", float),
+            OpenApiParameter("q", str),
+        ],
+        responses={(200, "application/octet-stream"): OpenApiTypes.BINARY},
+    )
+    @action(detail=True, methods=["get"])
+    def export(self, request, pk=None):
+        """Excel sheet of this drive's match results with the same filters as GET match.
+        Eligibility and compatibility/readiness stay in separate columns. Audited."""
+        from apps.core.excel import workbook_response
+        from apps.core.services import record_audit
+
+        drive = self.get_object()
+        if not is_cell(request.user):
+            raise PermissionDenied()
+        rows = _match_rows(drive, request.query_params)["results"]
+        gaps = {}
+        for student_id, skill, impact in (
+            GapItem.objects.filter(analysis__drive=drive, analysis__student_id__in=[r["student_id"] for r in rows])
+            .order_by("analysis__student_id", "rank")
+            .values_list("analysis__student_id", "skill__name", "impact")
+        ):
+            gaps.setdefault(student_id, []).append(f"{skill} ({impact})")
+        columns = [
+            ("Registration number", "roll_number"),
+            ("Name", "name"),
+            ("Department", "department"),
+            ("CGPA", "cgpa"),
+            (
+                "Eligibility",
+                lambda r: "—" if r["eligible"] is None else ("Eligible" if r["eligible"] else "Not eligible"),
+            ),
+            ("Failed criteria", "failed_criteria"),
+            ("Compatibility %", "compatibility"),
+            ("Readiness %", "readiness"),
+            ("Registration status", lambda r: r["registration_status"] or "Not registered"),
+            ("Top gaps (ranked)", lambda r: gaps.get(r["student_id"], [])[:5]),
+        ]
+        record_audit(
+            actor=request.user,
+            action="drive.export",
+            target=drive,
+            request=request,
+            after={"rows": len(rows), "filters": dict(request.query_params.items())},
+        )
+        name = f"{drive.company.name}-{drive.role_title}".lower().replace(" ", "-")
+        return workbook_response(name[:60], [("Match results", columns, rows)])
 
     @action(detail=True, methods=["get"])
     def registrations(self, request, pk=None):

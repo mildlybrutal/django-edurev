@@ -29,6 +29,7 @@ export function RecruiterAccessView() {
           <Recruiters />
         </div>
         <Grants />
+        <BroadcastLog />
         <AccessLogs />
       </div>
     </>
@@ -323,6 +324,8 @@ function AccessLogs() {
             <option value="list">List</option>
             <option value="search">Search</option>
             <option value="detail">Profile view</option>
+            <option value="resume">Resume</option>
+            <option value="broadcast">Broadcast</option>
             <option value="denied">Denied</option>
           </SelectField>
         }
@@ -374,6 +377,72 @@ function AccessLogs() {
               </Table>
               <div className="flex items-center justify-between px-5 py-2.5 text-sm">
                 <span className="text-muted">{p.count} entries</span>
+                <span className="flex gap-2">
+                  <Button variant="ghost" disabled={!p.previous} onClick={() => setPage((x) => x - 1)}>
+                    Previous
+                  </Button>
+                  <Button variant="ghost" disabled={!p.next} onClick={() => setPage((x) => x + 1)}>
+                    Next
+                  </Button>
+                </span>
+              </div>
+            </>
+          )
+        }
+      </QueryState>
+    </Card>
+  );
+}
+
+function BroadcastLog() {
+  const [page, setPage] = useState(1);
+  const rows = useQuery({
+    queryKey: ["recruiter-admin", "broadcasts", page],
+    queryFn: async () => unwrap(await api.GET("/api/v1/recruiter-admin/broadcasts/", { params: { query: { page } } })),
+  });
+  return (
+    <Card>
+      <CardHeader
+        title="Recruiter broadcasts"
+        description="Messages recruiters sent to candidates of their approved drive. Recipients are always limited to the grant's candidates."
+      />
+      <QueryState query={rows}>
+        {(p) =>
+          p.results.length === 0 ? (
+            <CardBody>
+              <EmptyState title="No broadcasts yet" />
+            </CardBody>
+          ) : (
+            <>
+              <Table caption="Recruiter broadcasts">
+                <thead>
+                  <tr>
+                    <Th>When</Th>
+                    <Th>Recruiter</Th>
+                    <Th>Drive</Th>
+                    <Th>Message</Th>
+                    <Th>Audience</Th>
+                    <Th>Recipients</Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {p.results.map((b) => (
+                    <tr key={b.id}>
+                      <Td className="tabular-nums">{new Date(b.created_at).toLocaleString()}</Td>
+                      <Td>{b.recruiter_email}</Td>
+                      <Td>{b.drive_label}</Td>
+                      <Td>
+                        <span className="font-medium">{b.title}</span>
+                        <span className="block max-w-md text-xs whitespace-pre-line text-muted">{b.body}</span>
+                      </Td>
+                      <Td>{b.audience === "shortlisted" ? "Shortlisted" : "All in scope"}</Td>
+                      <Td className="tabular-nums">{b.sent_at ? b.recipient_count : "Sending…"}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+              <div className="flex items-center justify-between px-5 py-2.5 text-sm">
+                <span className="text-muted">{p.count} broadcasts</span>
                 <span className="flex gap-2">
                   <Button variant="ghost" disabled={!p.previous} onClick={() => setPage((x) => x - 1)}>
                     Previous

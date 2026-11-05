@@ -5,7 +5,7 @@ import { HUE, hueFor } from "@/lib/modules";
 /**
  * Signature element: a numbered module spine in the skill cluster's hue, on the left of a
  * gap, plan item or skill row. `next` marks the one step the student should take now, in the
- * reserved violet. The number is real sequence (rank / order), not decoration.
+ * reserved `next` blue. The number is real sequence (rank / order), not decoration.
  */
 export function ModuleRow({
   index,
@@ -45,7 +45,7 @@ export function ModuleRow({
   );
 }
 
-/** "Next" tag in the reserved violet. Paired with text, never colour alone. */
+/** "Next" tag in the reserved `next` blue. Paired with text, never colour alone. */
 export function NextTag({ children = "Next" }: { children?: ReactNode }) {
   return (
     <span className="inline-flex items-center rounded bg-next px-1.5 py-0.5 text-[11px] font-semibold tracking-wide text-next-foreground uppercase">

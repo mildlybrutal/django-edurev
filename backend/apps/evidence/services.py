@@ -2,7 +2,14 @@ from django.db import transaction
 
 from apps.taxonomy.models import Level
 
-from .models import INSTITUTIONAL_SOURCES, EvidenceItem, EvidenceSkillTag, SourceType, VerificationStatus
+from .models import (
+    INSTITUTIONAL_SOURCES,
+    EvidenceFile,
+    EvidenceItem,
+    EvidenceSkillTag,
+    SourceType,
+    VerificationStatus,
+)
 from .signals import evidence_changed
 
 
@@ -119,8 +126,60 @@ def delete_evidence(item):
     if item.verification_status == VerificationStatus.VERIFIED:
         raise EvidenceError("Verified evidence cannot be deleted.")
     student = item.student
+    if hasattr(item, "file"):
+        item.file.file.delete(save=False)
     item.delete()
     evidence_changed.send(sender=EvidenceItem, student=student, evidence=None)
+
+
+@transaction.atomic
+def attach_certificate(item, uploaded, *, uploaded_by):
+    """Attach (or replace) the certificate file of a student's certification evidence. Only
+    while the item is editable, so a file never changes under a faculty review."""
+    from apps.core.services import record_audit
+
+    from . import files
+
+    if item.source_type != SourceType.CERTIFICATION:
+        raise EvidenceError("Files can only be attached to certification evidence.")
+    if item.verification_status not in EDITABLE_STATUSES:
+        raise EvidenceError("Evidence that is pending or verified cannot be changed.")
+    content_type, suffix, digest = files.validate_certificate(uploaded)
+    name = files.save_certificate(item, uploaded, suffix)
+    old = EvidenceFile.objects.filter(evidence=item).first()
+    if old is not None:
+        old.file.delete(save=False)
+        old.delete()
+    attached = EvidenceFile.objects.create(
+        institution_id=item.institution_id,
+        evidence=item,
+        file=name,
+        original_name=uploaded.name[-200:],
+        content_type=content_type,
+        size=uploaded.size,
+        sha256=digest,
+        uploaded_by=uploaded_by,
+    )
+    if item.verification_status == VerificationStatus.REJECTED:
+        item.verification_status = VerificationStatus.SELF_REPORTED
+        item.save(update_fields=["verification_status", "updated_at"])
+        _changed(item)
+    record_audit(actor=uploaded_by, action="evidence.certificate.upload", target=item, after={"size": uploaded.size})
+    return attached
+
+
+def remove_certificate(item, *, actor):
+    from apps.core.services import record_audit
+
+    if item.verification_status not in EDITABLE_STATUSES:
+        raise EvidenceError("Evidence that is pending or verified cannot be changed.")
+    attached = EvidenceFile.objects.filter(evidence=item).first()
+    if attached is None:
+        return False
+    attached.file.delete(save=False)
+    attached.delete()
+    record_audit(actor=actor, action="evidence.certificate.delete", target=item)
+    return True
 
 
 def request_verification(item):

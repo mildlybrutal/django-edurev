@@ -14,7 +14,7 @@ from apps.accounts.roles import Role
 from apps.core.api import service_call
 from apps.drives.models import Drive
 from apps.recruiter import services
-from apps.recruiter.models import RELEASABLE_FIELDS, AccessLog, CandidateScope, RecruiterAccessGrant
+from apps.recruiter.models import RELEASABLE_FIELDS, AccessLog, CandidateScope, RecruiterAccessGrant, RecruiterBroadcast
 
 HEAD = roles_required(Role.PLACEMENT_HEAD)
 
@@ -226,5 +226,44 @@ class AccessLogListView(ListAPIView):
     @extend_schema(
         parameters=[OpenApiParameter("recruiter", int), OpenApiParameter("drive", int), OpenApiParameter("action", str)]
     )
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+
+class BroadcastLogSerializer(serializers.ModelSerializer):
+    recruiter_email = serializers.EmailField(source="recruiter.email", read_only=True)
+    drive_label = serializers.CharField(source="drive.__str__", read_only=True)
+
+    class Meta:
+        model = RecruiterBroadcast
+        fields = [
+            "id",
+            "recruiter_email",
+            "drive_id",
+            "drive_label",
+            "audience",
+            "title",
+            "body",
+            "recipient_count",
+            "created_at",
+            "sent_at",
+        ]
+
+
+class BroadcastLogListView(ListAPIView):
+    """Placement head review of every recruiter broadcast in the institution."""
+
+    serializer_class = BroadcastLogSerializer
+    permission_classes = [HEAD]
+
+    def get_queryset(self):
+        qs = RecruiterBroadcast.objects.filter(institution_id=self.request.user.institution_id).select_related(
+            "recruiter", "drive__company"
+        )
+        if drive := self.request.query_params.get("drive"):
+            qs = qs.filter(drive_id=drive)
+        return qs
+
+    @extend_schema(parameters=[OpenApiParameter("drive", int)])
     def get(self, request, *args, **kwargs):
         return super().get(request, *args, **kwargs)

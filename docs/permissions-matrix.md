@@ -20,6 +20,12 @@ Legend: ✅ allowed · ⛔ denied · 🔒 own/scoped only (see note).
 | Upload / replace / delete resume | 🔒 self | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
 | View resume (5-minute signed link; staff and recruiter views logged) | 🔒 self | 🔒 mentees | ✅ | ✅ | ✅ | 🔒 grant releases `resume` |
 | Submit / edit / delete evidence | 🔒 own; unverified only | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
+| Upload / replace certificate file (PDF/PNG/JPEG) on certification evidence | 🔒 own; self-reported or rejected only | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ |
+| View certificate file (5-minute signed link; staff views audited) | 🔒 self | 🔒 mentees | ✅ | ✅ | ✅ | ⛔ never released |
+| Mentee summaries (academics, readiness, evidence, drives, plan progress) and per-student drive list | 🔒 self (drives) | 🔒 mentees | ✅ | ✅ | ✅ | ⛔ |
+| Excel export: students, evidence (filtered; audited) | ⛔ | 🔒 mentees only | ✅ | ✅ | ✅ | ⛔ **no export of any kind** |
+| Excel export: drive match results (filtered; audited) | ⛔ | ⛔ | ✅ | ✅ | ⛔ | ⛔ |
+| Excel import: students (validate first, all-or-nothing; audited) | ⛔ | ⛔ | ✅ | ✅ | ✅ | ⛔ |
 | Verify or reject evidence | ⛔ never own | 🔒 mentees | ⛔ | ⛔ | ⛔ | ⛔ |
 | Record assessments / mock interviews | ⛔ | 🔒 mentees | ✅ | ✅ | ⛔ | ⛔ |
 | Create rubrics | ⛔ | ⛔ | ✅ | ✅ | ✅ | ⛔ |
@@ -32,8 +38,9 @@ Legend: ✅ allowed · ⛔ denied · 🔒 own/scoped only (see note).
 | Preparation plans | 🔒 generate & update own | 🔒 read mentees' | read | read | read | ⛔ |
 | Batch analytics, supply vs demand, gaps, coverage, funnel | ⛔ | ⛔ | ✅ | ✅ | ✅ | ⛔ |
 | Department comparison, training effectiveness | ⛔ | ⛔ | ⛔ | ✅ | ✅ | ⛔ |
-| Recruiter accounts, grants, access-log review | ⛔ | ⛔ | ⛔ | ✅ | ⛔ | ⛔ |
+| Recruiter accounts, grants, access-log and broadcast review | ⛔ | ⛔ | ⛔ | ✅ | ⛔ | ⛔ |
 | Browse candidates | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | 🔒 registered (or shortlisted) students of an active, unexpired grant; released fields only; throttled; logged; no export |
+| Broadcast a notification to a drive's candidates | ⛔ | ⛔ | ⛔ | ⛔ | ⛔ | 🔒 candidates of an active, unexpired grant only (all or shortlisted); recipients resolved server-side, never listed back; 5 per drive per 24 h; logged |
 | Notifications | 🔒 own | 🔒 own | 🔒 own | 🔒 own | 🔒 own | ⛔ |
 | Django admin | superuser / staff only, independent of roles | | | | | |
 
@@ -44,7 +51,9 @@ Where each rule is tested:
 | Authentication, portals, MFA | `apps/accounts/tests/` |
 | Taxonomy | `apps/taxonomy/tests/test_api.py` |
 | Student scope | `apps/students/tests/` |
-| Evidence and verification | `apps/evidence/tests/`, `apps/verification/tests/` |
+| Evidence and verification (incl. certificate files) | `apps/evidence/tests/`, `apps/verification/tests/` |
+| Excel export/import, mentee summaries | `apps/reporting/tests/test_excel.py` |
+| Recruiter broadcasts | `apps/recruiter/tests/test_broadcasts.py` |
 | Assessments | `apps/assessments/tests/` |
 | Drives | `apps/drives/tests/` |
 | Reports | `apps/reporting/tests/` |

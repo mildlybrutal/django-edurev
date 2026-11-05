@@ -2,54 +2,54 @@
 name: Placement Readiness
 description: Evidence-based placement readiness, laid out as numbered, colour-coded study modules.
 colors:
-  background: "light-dark(#f6f7fb, #0b1224)"
-  surface: "light-dark(#ffffff, #111a31)"
-  surface-muted: "light-dark(#eef1f7, #18223c)"
-  surface-raised: "light-dark(#ffffff, #16203a)"
-  border: "light-dark(#dde2ec, #263252)"
-  border-strong: "light-dark(#c4cbdb, #34426a)"
-  foreground: "light-dark(#0f1a33, #e7ecf7)"
-  muted: "light-dark(#4b5671, #a0abc6)"
-  primary: "light-dark(#1e3fae, #8ea8ff)"
-  primary-hover: "light-dark(#18348f, #a9bdff)"
-  primary-foreground: "light-dark(#ffffff, #0b1224)"
-  primary-soft: "light-dark(#e6ecfb, #1a2750)"
-  rail: "light-dark(#1e3fae, #132a72)"
-  rail-foreground: "#ffffff"
-  rail-muted: "light-dark(#d3ddfa, #c3cff3)"
-  rail-hover: "light-dark(#2a4cbd, #1b3585)"
-  rail-active: "#ffffff"
-  rail-active-foreground: "light-dark(#1e3fae, #132a72)"
-  mod-cobalt: "light-dark(#1e3fae, #7f9cf5)"
-  mod-cobalt-soft: "light-dark(#e6ecfb, #1a2750)"
+  background: "light-dark(#f5f5f5, #141210)"
+  surface: "light-dark(#ffffff, #1d1a17)"
+  surface-muted: "light-dark(#f7f2ec, #26221e)"
+  surface-raised: "light-dark(#ffffff, #231f1b)"
+  border: "light-dark(#ecdccb, #3a332c)"
+  border-strong: "light-dark(#e2b98f, #54493e)"
+  foreground: "light-dark(#2b2b2b, #ede8e3)"
+  muted: "light-dark(#5f6368, #b3aaa1)"
+  primary: "light-dark(#b04d08, #ff9d4d)"
+  primary-hover: "light-dark(#9c4507, #ffb371)"
+  primary-foreground: "light-dark(#ffffff, #1a1008)"
+  primary-soft: "light-dark(#fff1e4, #3a2412)"
+  rail: "light-dark(#f7a14c, #3a2412)"
+  rail-foreground: "light-dark(#1b1b1b, #ffffff)"
+  rail-muted: "light-dark(#3a2410, #f3d2b4)"
+  rail-hover: "light-dark(#f4913a, #4a2e17)"
+  rail-active: "light-dark(#ffffff, #ff9d4d)"
+  rail-active-foreground: "light-dark(#b04d08, #1a1008)"
+  mod-cobalt: "light-dark(#1f4e8c, #8fb3e8)"
+  mod-cobalt-soft: "light-dark(#e8eef7, #172338)"
   mod-teal: "light-dark(#0e7c86, #45b9c2)"
   mod-teal-soft: "light-dark(#e0f2f3, #0f2b33)"
-  mod-green: "light-dark(#0f8a5f, #4cc293)"
-  mod-green-soft: "light-dark(#e2f4ec, #10291f)"
-  mod-marigold: "light-dark(#e8a317, #f2be4a)"
-  mod-marigold-soft: "light-dark(#fdf3dc, #2e2410)"
-  mod-marigold-text: "light-dark(#8a5a00, #f2be4a)"
-  mod-crimson: "light-dark(#c2362b, #f17d71)"
-  mod-crimson-soft: "light-dark(#fbe7e5, #321714)"
-  mod-ink-light: "light-dark(#ffffff, #0b1224)"
+  mod-green: "light-dark(#2e8b3e, #5cc96c)"
+  mod-green-soft: "light-dark(#e6f4e8, #13291a)"
+  mod-marigold: "light-dark(#f47920, #ff9d4d)"
+  mod-marigold-soft: "light-dark(#fff1e4, #3a2412)"
+  mod-marigold-text: "light-dark(#a34806, #ff9d4d)"
+  mod-crimson: "light-dark(#d32f2f, #f17d71)"
+  mod-crimson-soft: "light-dark(#fdeaea, #321714)"
+  mod-ink-light: "light-dark(#ffffff, #141210)"
   mod-ink-dark: "#1f1500"
-  next: "light-dark(#6d28d9, #b49cfb)"
-  next-soft: "light-dark(#efe8fd, #241a45)"
-  next-foreground: "light-dark(#ffffff, #120a26)"
-  success: "light-dark(#127347, #5cc98f)"
-  success-soft: "light-dark(#e3f4eb, #12291d)"
+  next: "light-dark(#1a6fc4, #6fb2f5)"
+  next-soft: "light-dark(#e6f0fb, #14263a)"
+  next-foreground: "light-dark(#ffffff, #0b1624)"
+  success: "light-dark(#2e7d32, #5cc96c)"
+  success-soft: "light-dark(#e6f4e8, #13291a)"
   warning: "light-dark(#8f5400, #f0b45a)"
   warning-soft: "light-dark(#fdf1dc, #2d2313)"
-  danger: "light-dark(#b42318, #f2877d)"
-  danger-soft: "light-dark(#fdeceb, #331b19)"
+  danger: "light-dark(#c62828, #f2877d)"
+  danger-soft: "light-dark(#fdeaea, #331b19)"
   danger-foreground: "light-dark(#ffffff, #1f0a08)"
-  info: "light-dark(#17608a, #6cb8e0)"
-  info-soft: "light-dark(#e4f1f8, #13242e)"
-  focus: "light-dark(#1e3fae, #a9bdff)"
-  series-1: "light-dark(#2a55d6, #6f93f4)"
-  series-2: "light-dark(#0e7c86, #45b9c2)"
-  series-track: "light-dark(#dbe4fb, #1f2d55)"
-  grid: "light-dark(#e4e8f0, #263252)"
+  info: "light-dark(#1565b8, #6fb2f5)"
+  info-soft: "light-dark(#e6f0fb, #14263a)"
+  focus: "light-dark(#1a6fc4, #6fb2f5)"
+  series-1: "light-dark(#f47920, #ff9d4d)"
+  series-2: "light-dark(#1a6fc4, #6fb2f5)"
+  series-track: "light-dark(#fde3cc, #3a2a1c)"
+  grid: "light-dark(#efe5da, #3a332c)"
 typography:
   display:
     fontFamily: "Geist, ui-sans-serif, system-ui, sans-serif"
@@ -220,15 +220,15 @@ components:
 
 **Creative North Star: "The Module Booklets"**
 
-Preparation is presented as a stack of numbered, colour-coded study modules, like the coaching booklets students already worked through. A committed cobalt rail holds the navigation on a cool practice-sheet white ground (ink navy in dark). Each skill cluster owns one flat module hue, and that hue follows the skill everywhere it appears: the numbered spine of a gap or plan row, the swatch in a chip, the bar in a supply chart. One more hue, violet, is held back for a single job: marking the one step the student should take next.
+Preparation is presented as a stack of numbered, colour-coded study modules, like the coaching booklets students already worked through. A committed UMS-orange rail with dark labels holds the navigation on a neutral grey ground with white, warm-outlined cards (warm charcoal in dark), echoing the university management system students already use. Primary actions use a deeper orange so white text stays at WCAG AA; UMS blue marks links, focus and the second data series. Each skill cluster owns one flat module hue, and that hue follows the skill everywhere it appears: the numbered spine of a gap or plan row, the swatch in a chip, the bar in a supply chart. One more hue, UMS blue, is held back for a single job: marking the one step the student should take next.
 
 The system is dense and operational: small sentence-case type, bordered flat cards, full tables for staff, and numbers that line up because every figure is tabular. Depth comes from borders and tonal surfaces. Shadows appear only on layers that float (toasts, tooltips, menus, dialogs, the active theme segment, the auth card). Motion is short and functional: state transitions, a toast slide, meters filling on mount, a press scale on buttons. All of it collapses under reduced motion.
 
 The build rejects the grey card dashboard with one indigo accent, gradients and glow, a neon dark-only look, and gamification. Light and dark are equal citizens: every colour token carries both values through `light-dark()`.
 
 **Key Characteristics:**
-- Committed cobalt shell rail, full page height, white active pill.
-- Five flat module hues mapped from skill clusters; violet reserved for "next".
+- Committed orange shell rail (dark labels), full page height, white active pill.
+- Five flat module hues mapped from skill clusters; blue reserved for "next".
 - Numbered 44px module spines on gaps, plan items and steps.
 - KPI tiles tied to a module by a 4px top band.
 - One family (Geist), tabular numerals on body.
@@ -237,7 +237,7 @@ The build rejects the grey card dashboard with one indigo accent, gradients and 
 
 ## Colors
 
-A cool, flat palette: one committed cobalt, five cluster hues, a reserved violet, and status tones, each defined once with its light and dark value.
+A flat UMS palette: one committed orange, five cluster hues, a reserved blue, and status tones, each defined once with its light and dark value.
 
 ### Primary
 - **Committed Cobalt** (`primary`, `rail`): the shell rail, primary buttons, active tabs, links, focus outline, and the info toast icon. In dark the rail deepens to a navy cobalt while `primary` lifts to a pale periwinkle so it stays readable on ink navy.
@@ -246,8 +246,8 @@ A cool, flat palette: one committed cobalt, five cluster hues, a reserved violet
 ### Secondary: module hues
 Skill clusters map to hues in code (`lib/modules.ts`): programming, backend and frontend to **Cobalt**; databases and devops to **Lagoon Teal**; data to **Field Green**; testing to **Marigold**; cs-fundamentals to **Brick Crimson**. Clusters added later get a stable hue by hashing the cluster name over the same five. Each hue has a solid fill, a soft wash (`*-soft`) for chip backgrounds, and an ink for text on the solid: white (`mod-ink-light`) on all but Marigold, which takes the dark `mod-ink-dark`. Marigold text on a light ground uses the darker `mod-marigold-text` for contrast.
 
-### Tertiary: reserved violet
-- **Next-Step Violet** (`next`, `next-soft`, `next-foreground`): only the student's single next step: the border of the next ModuleRow, the NEXT / "Start here" tag, the `next` button variant, the "Make a plan from this drive" link, and the `next` badge tone.
+### Tertiary: reserved blue
+- **Next-Step Blue** (`next`, `next-soft`, `next-foreground`): only the student's single next step: the border of the next ModuleRow, the NEXT / "Start here" tag, the `next` button variant, the "Make a plan from this drive" link, and the `next` badge tone.
 
 ### Status
 - **Success / Warning / Danger / Info** (each with `-soft`): verification, eligibility, readiness, impact and drive-state badges, inline form messages, toasts. Warning text is a dark amber in light mode so it reads on its soft wash.
@@ -262,7 +262,7 @@ Skill clusters map to hues in code (`lib/modules.ts`): programming, backend and 
 - **Foreground / Muted**: text and secondary text.
 
 ### Named Rules
-**The Reserved Violet Rule.** Violet marks the one next step and nothing else; each list shows at most one violet item, and violet is never a module hue.
+**The Reserved Blue Rule.** The `next` blue marks the one next step and nothing else; each list shows at most one `next` item, and it is never used as a module fill.
 
 **The Module Hue Rule.** A skill's colour comes from its cluster through `hueFor()`, never chosen per screen.
 
@@ -292,7 +292,7 @@ Skill clusters map to hues in code (`lib/modules.ts`): programming, backend and 
 
 ## Layout
 
-The app shell is a 256px cobalt rail (from the `lg` breakpoint, 1024px) beside a sticky 56px header with the theme switch and notifications. Below `lg` the rail becomes a modal drawer (288px, max 85vw) that slides in from the left. Content sits in a centred column capped at 1400px, padded 16px / 24px / 32px as the viewport grows.
+The app shell is a 256px orange rail (from the `lg` breakpoint, 1024px) beside a sticky 56px header with the theme switch and notifications. Below `lg` the rail becomes a modal drawer (288px, max 85vw) that slides in from the left. Content sits in a centred column capped at 1400px, padded 16px / 24px / 32px as the viewport grows.
 
 KPI tiles sit in a four-up grid at `xl` (1280px), two-up from `sm` (640px), and stack on mobile, with 16px gaps. The student dashboard pairs a left column of module spines (next steps with time budget, gaps, skill profile) with a right column of readiness radar, drives table and activity. Evaluation views put eligibility and compatibility side by side at `xl`, with readiness and gaps spanning the full width below. Cards pad 20px horizontally and 16px vertically; lists of module rows step by 8 to 10px. Wide tables scroll horizontally inside a focusable region.
 
@@ -328,7 +328,7 @@ Compact and quiet, with a tactile press.
 - **Primary:** cobalt fill, white text; hover deepens to `primary-hover`.
 - **Secondary:** surface fill with a 1px border; hover strengthens the border and moves to `surface-muted`.
 - **Ghost:** text only; hover adds `surface-muted`.
-- **Danger / Next:** solid danger or violet fill; hover drops to 90% opacity. Next is used only for the single next action.
+- **Danger / Next:** solid danger or `next` blue fill; hover drops to 90% opacity. Next is used only for the single next action.
 - **States:** 150ms ease-out transitions on colour, border, opacity and transform; `active` scales to 0.97; disabled is 50% opacity with no press scale. Focus uses the global 2px `focus` outline with a 2px offset.
 
 ### Badges and status
@@ -351,7 +351,7 @@ Compact and quiet, with a tactile press.
 Bordered 8px card with the 4px module-hue band on top, a muted sentence-case label with an optional icon in the hue, a 1.75rem tabular value, and an optional 0.75rem hint. Missing values render as an em dash, never an invented number.
 
 ### Module row (signature)
-A bordered 8px row with a 44px numbered spine on the left: two-digit sequence (01, 02...) in 0.875rem semibold tabular figures on the cluster's solid hue, ink chosen per hue. The number is real order (gap rank or plan sequence). Done rows grey the spine to `surface-muted`; the next row swaps its border to violet and carries the NEXT tag. Hover strengthens the border in 150ms. The same spine appears in the auth story panel, where the first step uses white because cobalt would vanish on the rail.
+A bordered 8px row with a 44px numbered spine on the left: two-digit sequence (01, 02...) in 0.875rem semibold tabular figures on the cluster's solid hue, ink chosen per hue. The number is real order (gap rank or plan sequence). Done rows grey the spine to `surface-muted`; the next row swaps its border to the `next` blue and carries the NEXT tag. Hover strengthens the border in 150ms. The same spine appears in the auth story panel, where the first step uses white because a dark module hue would lose contrast on the rail.
 
 ### Inputs / Fields
 - **Style:** 36px tall, 6px radius, 1px `border`, `surface` fill, 0.875rem text, label above in 0.875rem medium with 6px gap.
@@ -393,7 +393,7 @@ GitHub and LeetCode ratings are shown as supporting evidence with the evidence i
 
 ### Do:
 - **Do** take a skill's colour from its cluster through the module hue map, using solid for spines and bars, soft for chips.
-- **Do** keep violet for the single next step: one violet row, tag or button per list.
+- **Do** keep the `next` blue for the single next step: one such row, tag or button per list.
 - **Do** tie KPI tiles to a module with the 4px top band.
 - **Do** pair every status with a word, and with an icon for verification, eligibility and readiness.
 - **Do** render eligibility and readiness as separate cards with separate badges.
@@ -405,7 +405,7 @@ GitHub and LeetCode ratings are shown as supporting evidence with the evidence i
 ### Don't:
 - **Don't** use gradients or glow.
 - **Don't** use coloured side borders thicker than 1px as an accent.
-- **Don't** use violet as a module hue, a chart series, or general emphasis.
+- **Don't** use the `next` token as a module hue or general emphasis (the second chart series uses its own `series-2` token).
 - **Don't** add a second type family or proportional figures for numbers.
 - **Don't** put shadows on in-flow cards, tiles or rows.
 - **Don't** show errors as toasts.

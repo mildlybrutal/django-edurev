@@ -17,7 +17,7 @@ from apps.accounts.roles import Role, has_role
 from apps.matching.models import MatchResult
 from apps.profiles.models import SkillClaim
 from apps.recruiter import services
-from apps.recruiter.models import AccessAction
+from apps.recruiter.models import AccessAction, BroadcastAudience, RecruiterBroadcast
 from apps.reporting.services import band_of
 from apps.taxonomy.models import SkillClosure
 from apps.taxonomy.selectors import search_skills
@@ -299,3 +299,46 @@ class CandidateResumeView(RecruiterAPIView):
         from django.conf import settings
 
         return Response({"url": signed_url(resume.file.name), "expires_in": settings.RESUME_URL_EXPIRY_SECONDS})
+
+
+class BroadcastSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecruiterBroadcast
+        fields = ["id", "audience", "title", "body", "recipient_count", "created_at", "sent_at"]
+
+
+class BroadcastInput(serializers.Serializer):
+    audience = serializers.ChoiceField(choices=BroadcastAudience.choices, default=BroadcastAudience.ALL)
+    title = serializers.CharField(max_length=120)
+    body = serializers.CharField(max_length=2000)
+
+
+class BroadcastView(RecruiterAPIView):
+    """GET — the recruiter's own broadcasts for this drive. POST — send an in-app notification to
+    the drive's candidates within the grant's scope. Recipients are never listed back; only the
+    count. Grant validity is checked on every call and each send is logged."""
+
+    @extend_schema(operation_id="recruiter_broadcasts_list", responses=BroadcastSerializer(many=True))
+    def get(self, request, drive_id):
+        grant = self.grant_or_404(drive_id)
+        rows = RecruiterBroadcast.objects.filter(recruiter=request.user, drive_id=grant.drive_id)[:50]
+        return Response(BroadcastSerializer(rows, many=True).data)
+
+    @extend_schema(
+        operation_id="recruiter_broadcasts_create", request=BroadcastInput, responses={201: BroadcastSerializer}
+    )
+    def post(self, request, drive_id):
+        from apps.core.api import service_call
+
+        grant = self.grant_or_404(drive_id)
+        data = BroadcastInput(data=request.data)
+        data.is_valid(raise_exception=True)
+        broadcast = service_call(
+            services.create_broadcast,
+            grant=grant,
+            request=request,
+            error_types=(services.BroadcastError,),
+            **data.validated_data,
+        )
+        broadcast.refresh_from_db()
+        return Response(BroadcastSerializer(broadcast).data, status=status.HTTP_201_CREATED)

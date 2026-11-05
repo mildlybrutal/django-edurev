@@ -41,6 +41,8 @@ All configuration is by environment variable (CES §1.2). Local defaults live in
 | `RESUME_S3_PUBLIC_URL` | no | unset | Endpoint the **browser** can reach, used to sign view links (compose: `http://localhost:8333`). Unset means the internal endpoint |
 | `RESUME_S3_REGION` | no | `us-east-1` | Signing region |
 | `RESUME_MAX_BYTES` | no | `5242880` | Resume size cap (PDF only, magic bytes checked) |
+| `CERTIFICATE_MAX_BYTES` | no | `5242880` | Certificate file size cap (PDF, PNG or JPEG; type decided by magic bytes). Stored in the resume bucket under `certificates/` |
+| `RECRUITER_BROADCASTS_PER_DAY` | no | `5` | Broadcasts a recruiter may send per drive in any 24 hours |
 | `RESUME_URL_EXPIRY_SECONDS` | no | `300` | Lifetime of signed resume view links |
 | `GITHUB_TOKEN` | no | unset | Optional token for the coding-activity sync (raises GitHub's limit from 60 requests/hour) |
 

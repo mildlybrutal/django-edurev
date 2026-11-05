@@ -31,7 +31,7 @@ def pending_for_reviewer(reviewer):
             student__mentor=reviewer,
             verification_status=VerificationStatus.PENDING,
         )
-        .select_related("student__user", "student__department")
+        .select_related("student__user", "student__department", "file")
         .prefetch_related("skill_tags__skill")
         .order_by("submitted_at")
     )
