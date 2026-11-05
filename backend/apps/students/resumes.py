@@ -1,6 +1,7 @@
-"""Resume storage. Files live in S3-compatible object storage (CES §1.1: never MEDIA_ROOT on the
-app server) under a private bucket, and are viewed only through short-lived signed URLs issued
-after an authorization check. Tests use Django's in-memory storage."""
+"""Resume storage. Files never live on the app server's disk (CES §1.1): they are stored in
+PostgreSQL by default (apps.core.file_storage, ADR 0011) or in a private S3-compatible bucket with
+FILE_STORAGE=s3, and are viewed only through short-lived signed URLs issued after an
+authorization check."""
 
 import hashlib
 import uuid
@@ -60,6 +61,8 @@ def signed_url(name, expires=None, content_type="application/pdf"):
     public endpoint (the browser cannot reach the in-cluster hostname)."""
     expires = expires or getattr(settings, "RESUME_URL_EXPIRY_SECONDS", 300)
     storage = resume_storage()
+    if hasattr(storage, "signed_url"):  # database storage
+        return storage.signed_url(name, expires=expires, content_type=content_type)
     if hasattr(storage, "bucket_name"):
         from storages.backends.s3 import S3Storage
 

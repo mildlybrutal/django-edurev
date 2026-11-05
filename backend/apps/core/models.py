@@ -125,3 +125,18 @@ class BackgroundJob(models.Model):
         if self.started_at and self.finished_at:
             return (self.finished_at - self.started_at).total_seconds()
         return None
+
+
+class StoredFile(models.Model):
+    """Bytes of an uploaded file (resume, certificate) when FILE_STORAGE is "database"
+    (apps.core.file_storage.DatabaseStorage, ADR 0011). Access control lives on the records that
+    reference a file by name (StudentResume, EvidenceFile); files are only ever reached through a
+    short-lived signed link issued after their permission check."""
+
+    name = models.CharField(max_length=300, unique=True)
+    content = models.BinaryField()
+    size = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name

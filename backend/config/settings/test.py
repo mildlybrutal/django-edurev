@@ -11,6 +11,5 @@ PASSWORD_HASHERS = ["django.contrib.auth.hashers.MD5PasswordHasher"]
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 CSRF_TRUSTED_ORIGINS = ["http://localhost:3000"]
-STORAGES = {**STORAGES, "resumes": {"BACKEND": "django.core.files.storage.InMemoryStorage"}}  # noqa: F405
 # Individual tests opt in to MFA enforcement with override_settings.
 MFA_REQUIRED_ROLES = []

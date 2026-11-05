@@ -35,6 +35,8 @@ All configuration is by environment variable (CES §1.2). Local defaults live in
 | `DEFAULT_FROM_EMAIL` | no | `placement@localhost` | Sender address |
 | `LOG_LEVEL` | no | `INFO` | Root log level (JSON output) |
 | `THROTTLE_SIGNUP` | no | `5/min` | Per-IP rate for student self sign-up |
+| `FILE_STORAGE` | no | `database` | Where uploaded resumes and certificates are stored: `database` (PostgreSQL, [ADR 0011](adr/0011-file-storage-in-postgres.md)) or `s3` (the `RESUME_S3_*` settings below). The `RESUME_S3_*` settings are only used with `s3` |
+| `THROTTLE_FILE_LINK` | no | `60/min` | Per-IP rate for opening signed file links |
 | `RESUME_S3_ACCESS_KEY` / `RESUME_S3_SECRET_KEY` | yes (compose) | — | Credentials for resume object storage. In compose they also configure the SeaweedFS S3 gateway. Generate your own; never commit them |
 | `RESUME_S3_BUCKET` | no | `resumes` | Private bucket, created on first upload |
 | `RESUME_S3_ENDPOINT_URL` | no | `http://localhost:8333` (compose: `http://objectstore:8333`) | S3 endpoint the backend uses. Point at AWS S3 or R2 in production |
