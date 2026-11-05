@@ -10,7 +10,7 @@ All 12 phases of the [implementation plan](implementation-plan.md) are implement
 
 | Check | Result |
 |---|---|
-| Backend `pytest` (PostgreSQL 16) | **294 passed** (2026-11-06), 87% statement coverage at last measurement (2026-10-21) |
+| Backend `pytest` (PostgreSQL 16) | **295 passed** (2026-11-06), 87% statement coverage at last measurement (2026-10-21) |
 | `ruff check` / `ruff format --check` / `makemigrations --check` | clean |
 | OpenAPI `spectacular --validate --fail-on-warn` | 0 warnings, 0 errors (99 paths) |
 | `pip-audit` / `npm audit --omit=dev` | no known vulnerabilities. Full `npm audit` reports 8 advisories in **dev-only** tooling (vitest's `tinypool`, `eslint-config-next`'s glob deps); fixes need a vitest 3→5 major upgrade, not yet done |
@@ -69,7 +69,7 @@ Design choices are documented in [scoring-policy.md](scoring-policy.md), [data-r
 | Item | Notes |
 |---|---|
 | CI on GitHub | Runs on every push and pull request. The first run (2026-10-31) failed on a gitleaks false positive (test fixture passwords) and stale generated API types; both fixed 2026-11-06 |
-| Deployment | No staging or production deployment. [Deployment runbook](runbooks/deployment.md) written but not exercised. [Backup/restore](runbooks/backup-restore.md) verified locally only |
+| Deployment | No staging or production deployment. [Deployment runbook](runbooks/deployment.md) and a Render Blueprint (`render.yaml`, [render.md](runbooks/render.md)) written but not exercised. [Backup/restore](runbooks/backup-restore.md) verified locally only |
 | Recorded handover walkthrough | Not recorded (CES §1.6) |
 | File uploads | Resumes and certification files upload to S3-compatible storage (size, extension and magic bytes are checked). **No malware scanning.** JD files (PDF/DOCX/TXT) are read for their text and not stored; there is no OCR for scanned PDFs. Other evidence is still links |
 | Live external-platform APIs | GitHub, LeetCode and Codeforces are fetched (LeetCode via an unofficial endpoint that may break). CodeChef has no official API and stays manual evidence. LinkedIn is stored as a link only (no API) |

@@ -1,0 +1,118 @@
+# Render Blueprint (https://render.com/docs/blueprint-spec). In the Render dashboard choose
+# New > Blueprint and select this repository. Values marked `sync: false` are asked for on the
+# first deploy; see docs/runbooks/render.md for what to enter and for first-time setup.
+#
+# Shape: browser -> placement-frontend (Next.js) -> /api/v1 rewrite -> placement-backend (Django).
+# The browser never calls Django directly, so auth cookies stay host-only on the frontend.
+
+envVarGroups:
+  # Shared by the web service and the Celery worker: both must sign and read the same tokens.
+  - name: placement-shared
+    envVars:
+      - key: DJANGO_SETTINGS_MODULE
+        value: config.settings.prod
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: JWT_SIGNING_KEY
+        generateValue: true
+      - key: LOG_LEVEL
+        value: INFO
+
+services:
+  - type: web
+    name: placement-backend
+    runtime: docker
+    plan: starter # needed for preDeployCommand (migrations) and Shell (first-time setup)
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    preDeployCommand: python manage.py migrate --noinput
+    envVars:
+      - fromGroup: placement-shared
+      - key: PORT
+        value: "8000" # the image's gunicorn binds 8000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: placement-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: placement-redis
+          property: connectionString
+      # e.g. placement-backend.onrender.com (the frontend reaches Django on this host)
+      - key: DJANGO_ALLOWED_HOSTS
+        sync: false
+      # e.g. https://placement-frontend.onrender.com (add the recruiter host too, comma-separated)
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      # Browser -> Render edge -> Next.js -> Render edge -> Django. Verify the client IP recorded
+      # in the audit log after the first sign-in and adjust if it is wrong.
+      - key: NUM_PROXIES
+        value: "2"
+      # Resume / certificate storage. Render has no object storage: use Cloudflare R2 or AWS S3.
+      - key: RESUME_S3_ENDPOINT_URL
+        sync: false
+      - key: RESUME_S3_ACCESS_KEY
+        sync: false
+      - key: RESUME_S3_SECRET_KEY
+        sync: false
+      - key: RESUME_S3_BUCKET
+        value: resumes
+      - key: RESUME_S3_REGION
+        value: auto # R2; use the bucket's region for AWS S3
+      - key: GITHUB_TOKEN # optional: raises GitHub's 60 requests/hour limit for coding sync
+        sync: false
+
+  # Celery worker with Beat embedded (-B): one process runs both, which is cheaper than two
+  # services. Beat must have exactly one instance, so do not scale this service above 1; if you
+  # need more workers, split Beat into its own worker service first.
+  - type: worker
+    name: placement-worker
+    runtime: docker
+    plan: starter # background workers have no free plan
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    dockerCommand: celery -A config worker -B --loglevel=INFO --schedule /tmp/celerybeat-schedule
+    envVars:
+      - fromGroup: placement-shared
+      - key: DATABASE_URL
+        fromDatabase:
+          name: placement-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: placement-redis
+          property: connectionString
+      - key: GITHUB_TOKEN
+        sync: false
+
+  - type: web
+    name: placement-frontend
+    runtime: node
+    plan: starter # the free plan sleeps after 15 idle minutes (about a minute to wake)
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /login
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: NEXT_TELEMETRY_DISABLED
+        value: "1"
+      # e.g. https://placement-backend.onrender.com (target of the /api/v1 rewrite)
+      - key: BACKEND_URL
+        sync: false
+
+  - type: keyvalue
+    name: placement-redis
+    plan: free # cache, throttling, lockout and Celery broker; contents are disposable
+    ipAllowList: [] # reachable only from services in this Render account
+
+databases:
+  - name: placement-db
+    postgresMajorVersion: "16"
+    plan: basic-256mb # the free plan is deleted after 30 days
+    databaseName: placement
+    user: placement
