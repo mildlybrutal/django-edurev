@@ -37,7 +37,9 @@ Filters and facets follow the same rule. A recruiter can only filter or facet on
 
 ## Volume and logging
 
-- No bulk export endpoint exists (verified by test). Candidate lists return 10 per page and the page size cannot be raised.
+- No bulk export endpoint exists (verified by test). Candidate lists return 10 per page and the page size cannot be raised. The staff Excel exports (students, evidence, drive results) are internal-portal only and reject recruiter accounts.
+- Certificate files are never released to recruiters, whatever the grant (the `evidence` field releases titles, types and status only).
+- Recruiters may broadcast an in-app notification to the candidates of a drive they hold a valid grant for. Recipients are the grant's scoped candidates (optionally only shortlisted ones), resolved on the server; the recruiter sees only a count. Each send is written to the access log with the recipients' ids and is reviewable by the placement head.
 - Recruiter requests have their own throttle (default 30/min per recruiter; 5/min for recruiter login).
 - Every list, search, profile view and **denied** attempt is written to an append-only access log: recruiter, grant, drive, students returned, fields released, query, IP and time. The placement head reviews it under **Placement → Recruiter Access → Access log**.
 - Responses carry `Cache-Control: no-store`.

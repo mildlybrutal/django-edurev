@@ -164,9 +164,9 @@ def project_depth(projects, config):
 
 
 _NO_CODING = {
-    "summary": "Mean of your synced GitHub and LeetCode ratings (unverified external activity).",
+    "summary": "Mean of your synced GitHub, LeetCode and Codeforces ratings (unverified external activity).",
     "inputs": [],
-    "missing": "Link your GitHub and LeetCode profiles to add coding activity.",
+    "missing": "Link your GitHub, LeetCode or Codeforces profiles to add coding activity.",
 }
 
 
@@ -188,8 +188,8 @@ def _coding_inputs(student_ids):
         result[sid] = (
             score or 0.0,
             {
-                "summary": "Mean of your synced GitHub and LeetCode ratings. Public activity is unverified external "
-                "evidence: it supports, but never proves, expertise.",
+                "summary": "Mean of your synced GitHub, LeetCode and Codeforces ratings. Public activity is "
+                "unverified external evidence: it supports, but never proves, expertise.",
                 "inputs": rows,
                 "missing": None if score is not None else "None of your coding profiles has synced yet.",
             },

@@ -146,7 +146,7 @@ PROFILE_CHECKS = [
     ("assessment", "Take an institutional assessment"),
     ("mock_interview", "Complete a mock interview"),
     ("resume", "Upload your resume"),
-    ("coding", "Link your GitHub or LeetCode profile"),
+    ("coding", "Link your GitHub, LeetCode or Codeforces profile"),
 ]
 
 

@@ -16,13 +16,16 @@ import { Tabs } from "@/components/ui/tabs";
 import { api, unwrap } from "@/lib/api/client";
 import { get, patch } from "@/lib/api/request";
 import { useMe } from "@/lib/auth/session";
-import type { SkillProfile } from "@/lib/api/types";
+import type { SkillProfile, StudentDriveRow } from "@/lib/api/types";
 import { useState } from "react";
+import { pct } from "@/components/ui/stat";
+import { Table, Td, Th } from "@/components/ui/table";
+import { CertificateViewButton } from "./certificate";
 import { CodingActivityCard } from "./coding-activity";
 import { ResumeCard } from "./resume-panel";
 import { SkillProfileList } from "./skill-profile";
 
-type Tab = "profile" | "readiness" | "evidence" | "assessments";
+type Tab = "profile" | "readiness" | "drives" | "evidence" | "assessments";
 
 /** Staff view of one student (faculty for mentees, placement cell for anyone in the institution). */
 export function StudentDetail({ id }: { id: number }) {
@@ -47,6 +50,7 @@ export function StudentDetail({ id }: { id: number }) {
             tabs={[
               { value: "profile", label: "Skill profile" },
               { value: "readiness", label: "Readiness" },
+              { value: "drives", label: "Drives & plans" },
               { value: "evidence", label: "Evidence" },
               { value: "assessments", label: "Assessments" },
             ]}
@@ -88,11 +92,104 @@ export function StudentDetail({ id }: { id: number }) {
             </div>
           )}
           {tab === "readiness" && <ReadinessHistory studentId={id} />}
+          {tab === "drives" && <StudentDrives studentId={id} />}
           {tab === "evidence" && <EvidenceList studentId={id} />}
           {tab === "assessments" && <AssessmentHistory studentId={id} showHeader={false} />}
         </>
       )}
     </QueryState>
+  );
+}
+
+const REGISTRATION_LABELS: Record<string, string> = {
+  registered: "Registered",
+  withdrawn: "Withdrawn",
+  shortlisted: "Shortlisted",
+  not_shortlisted: "Not shortlisted",
+  selected: "Selected",
+  not_selected: "Not selected",
+};
+
+/** Drives the student registered for. Eligibility and compatibility are separate columns. */
+function StudentDrives({ studentId }: { studentId: number }) {
+  const drives = useQuery({
+    queryKey: ["student-drives", studentId],
+    queryFn: () => get<StudentDriveRow[]>(`/api/v1/students/${studentId}/drives/`),
+  });
+  return (
+    <Card>
+      <CardHeader
+        title="Drives & preparation"
+        description="Eligibility (hard criteria) and skill match are computed independently."
+      />
+      <QueryState query={drives}>
+        {(rows) =>
+          rows.length === 0 ? (
+            <div className="p-5">
+              <EmptyState title="Not registered for any drive" />
+            </div>
+          ) : (
+            <Table caption="Drive registrations">
+              <thead>
+                <tr>
+                  <Th>Drive</Th>
+                  <Th>Eligibility</Th>
+                  <Th>Compatibility</Th>
+                  <Th>Readiness</Th>
+                  <Th>Status</Th>
+                  <Th>Plan</Th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.drive_id}>
+                    <Td>
+                      <span className="font-medium">{r.company}</span>
+                      <span className="block text-xs text-muted">
+                        {r.role}
+                        {r.drive_date ? ` · ${new Date(r.drive_date).toLocaleDateString()}` : ""}
+                      </span>
+                    </Td>
+                    <Td>
+                      {r.is_eligible === null ? (
+                        <span className="text-muted">Not evaluated</span>
+                      ) : r.is_eligible ? (
+                        <Badge tone="success">Eligible</Badge>
+                      ) : (
+                        <>
+                          <Badge tone="danger">Not eligible</Badge>
+                          <span className="mt-0.5 block text-xs text-muted">
+                            {r.failed_rules.map((f) => f.message).join("; ")}
+                          </span>
+                        </>
+                      )}
+                    </Td>
+                    <Td className="tabular-nums">{pct(r.compatibility)}</Td>
+                    <Td className="tabular-nums">{pct(r.readiness)}</Td>
+                    <Td>{REGISTRATION_LABELS[r.registration_status] ?? r.registration_status}</Td>
+                    <Td className="tabular-nums">
+                      {r.plan ? (
+                        <div className="flex min-w-28 flex-col gap-1">
+                          <span>
+                            {r.plan.done}/{r.plan.total} tasks
+                          </span>
+                          <Meter
+                            value={r.plan.total ? (100 * r.plan.done) / r.plan.total : 0}
+                            label={`Plan progress for ${r.company}`}
+                          />
+                        </div>
+                      ) : (
+                        <span className="text-muted">No plan</span>
+                      )}
+                    </Td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )
+        }
+      </QueryState>
+    </Card>
   );
 }
 
@@ -122,6 +219,11 @@ function EvidenceList({ studentId }: { studentId: number }) {
                   <p className="mt-1 text-xs text-muted">
                     {e.skill_tags.map((t) => `${t.skill} (${t.level_label})`).join(", ") || "No skills tagged"}
                   </p>
+                  {e.certificate && (
+                    <div className="mt-1">
+                      <CertificateViewButton item={e} />
+                    </div>
+                  )}
                   {e.source_url && (
                     <a
                       className="text-xs text-primary hover:underline"

@@ -59,7 +59,7 @@ function NavList({
 }
 
 /**
- * Chrome shared by every portal: committed cobalt rail, sticky header with theme switch and
+ * Chrome shared by every portal: committed orange rail, sticky header with theme switch and
  * notifications, mobile drawer. Visual only; every API call is authorized by Django.
  */
 export function AppFrame({

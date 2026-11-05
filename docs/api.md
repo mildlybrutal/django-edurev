@@ -1,6 +1,6 @@
 # API reference
 
-The authoritative, machine-readable contract is the OpenAPI 3 schema at `GET /api/v1/schema/` (served to anyone in dev and to admins only in production). CI fails if it has any warning, or if the frontend's generated types drift from it. This page is the human overview (99 paths).
+The authoritative, machine-readable contract is the OpenAPI 3 schema at `GET /api/v1/schema/` (served to anyone in dev and to admins only in production). CI fails if it has any warning, or if the frontend's generated types drift from it. This page is the human overview.
 
 **Conventions**
 - All endpoints are under `/api/v1/` and end with `/`.
@@ -63,20 +63,27 @@ Read: all internal roles. Write: A. All writes audited.
 | GET | `faculty/` | O/H/A | Faculty list (for mentor assignment) |
 | GET/POST | `me/onboarding/` | student | Whether the first-run profile pop-up should show; POST marks it done |
 | GET | `{id\|me}/coding/` | self, mentor, O/H/A | Coding-activity score and per-platform ratings with explanation |
-| POST | `me/coding/` | self | Set or unlink `github_username` / `leetcode_username`; queues a sync |
+| POST | `me/coding/` | self | Set or unlink `github_username` / `leetcode_username` / `codeforces_username`; queues a sync |
 | POST | `me/coding/refresh/` | self | Re-sync (at most every 30 minutes); 202 |
 | GET | `{id\|me}/resume/` | self, mentor, O/H/A | Current resume: name, size and a 5-minute signed view link. Staff views are audited |
 | POST | `me/resume/` | self | Upload a PDF (multipart `file`, ≤5 MB, magic bytes checked); keeps the last 3 versions |
 | DELETE | `me/resume/` | self | Delete every version |
+| GET | `{id\|me}/drives/` | self, mentor, O/H/A | Drives the student registered for: eligibility (with failed rules) and compatibility/readiness as **separate fields**, registration status and active-plan progress |
+| GET | `export/` | F (mentees), O/H/A | Excel (.xlsx) of student summaries (academics, general readiness, evidence by status, drives, plan progress). Same filters as the list plus `?band=0-40\|40-60\|60-80\|80-100\|none` and `?academic_verified=`. Audited |
+| GET | `import/` | O/H/A | Blank import template (.xlsx) with an Instructions sheet |
+| POST | `import/` | O/H/A | Multipart `file` (.xlsx ≤2 MB, ≤5,000 rows), optional `dry_run=true`. Matches on registration number: new numbers create students, known ones update academics (and confirm them). Every row is validated first; nothing is written if any row fails. Returns `{rows, created, updated, unchanged, errors:[{row, registration_number, error}], applied}` |
 
 ## Evidence (M2): `/api/v1/evidence/` and verification (M3): `/api/v1/verification/`
 
 | Method | Path | Who | Purpose |
 |---|---|---|---|
-| GET | `evidence/` | S (own), F (mentees), O/H/A | List; `?student=`, `?status=` |
+| GET | `evidence/` | S (own), F (mentees), O/H/A | List; `?student=`, `?status=`, `?source_type=`. Each item carries `certificate` (name, type, size, uploaded_at) or null |
+| GET | `evidence/export/` | F (mentees), O/H/A | Excel (.xlsx) of evidence with the same filters (no files or file links). Audited |
 | POST | `evidence/` | S | Submit `{source_type, title, description, source_url, external_reference, extracted_data, tags:[{skill_id, claimed_level}], request_verification}`. Institutional types are refused |
 | GET/PATCH/DELETE | `evidence/{id}/` | owner (edit only self-reported/rejected; verified items are locked) | Detail / edit / delete |
 | POST | `evidence/{id}/request-verification/` | owner | Self-reported → pending; notifies the mentor |
+| GET | `evidence/{id}/certificate/` | owner, mentor, O/H/A | 5-minute signed view link to the certificate file. Staff views are audited |
+| POST/DELETE | `evidence/{id}/certificate/` | owner | Attach/replace (multipart `file`: PDF, PNG or JPEG ≤5 MB, type decided by magic bytes) or remove the file of a **certification** item; only while self-reported or rejected (a rejected item returns to self-reported) |
 | GET | `verification/queue/` | F | Mentees' pending evidence, oldest first |
 | POST | `verification/{evidence_id}/decide/` | F (mentor only) | `{decision: verified\|rejected, comment}`; a comment is required to reject; immutable record; student notified |
 
@@ -109,13 +116,14 @@ Students see non-draft drives only. Management is O/H.
 | POST, DELETE | `{id}/requirements/`, `{id}/requirements/{skill_id}/` | O/H | Set / remove a skill requirement |
 | POST, DELETE | `{id}/eligibility-rules/`, `{id}/eligibility-rules/{rule_type}/` | O/H | `min_cgpa`, `max_active_backlogs`, `department_in`, `graduation_year_in` |
 | POST | `{id}/apply-role/` | O/H | Seed requirements from a target role |
-| GET/POST | `{id}/jd/` | O/H | Submit JD text (202; processed on the worker) / read status and extraction |
+| GET/POST | `{id}/jd/` | O/H | Submit JD `text` (JSON) or a JD `file` (multipart: PDF, DOCX or TXT, ≤ 5 MB; its text is extracted and becomes the JD). 202; processed on the worker. GET reads status and extraction |
 | POST | `{id}/jd/apply/` | O/H | Apply the officer-reviewed subset of the extraction |
 | POST | `{id}/transition/` | O/H | `published` (runs matching + notifies students), `registration_closed`, `shortlisting`, `completed`, `cancelled` |
 | POST/GET | `{id}/match/` | O/H | Start the background matching job (202) / list results with eligibility and compatibility side by side (`?eligible=`, `?registered=`, `?min_compatibility=`, `?q=`) |
 | GET | `{id}/jobs/` | O/H | Recent matching jobs and progress |
 | GET | `{id}/students/{student_id}/` | O/H | One student's full evaluation for the drive |
 | GET | `{id}/registrations/` | O/H | Registered students |
+| GET | `{id}/export/` | O/H | Excel (.xlsx) of match results with the same filters as `GET match` (eligibility, failed criteria, compatibility, readiness, registration status, top ranked gaps). Audited |
 | POST | `{id}/registrations/{registration_id}/decide/` | O/H | `shortlisted`, `not_shortlisted`, `selected`, `not_selected` (student notified) |
 | GET | `{id}/my-evaluation/` | S | **Separate blocks**: eligibility (reasons), compatibility (per-requirement breakdown), drive readiness (snapshot), ranked gaps, registration, plan id. Recomputed when stale |
 | POST | `{id}/register/`, `{id}/withdraw/` | S | Register (eligibility enforced server-side) / withdraw while open |
@@ -149,7 +157,7 @@ Students see non-draft drives only. Management is O/H.
 | GET, POST | `notifications/`, `notifications/unread/`, `notifications/mark-read/` | signed in | Own in-app notifications |
 
 ## Recruiter portal (M10): `/api/v1/recruiter/`
-Recruiter tokens only (separate cookies and throttle scope). Read-only. **There is no export endpoint.**
+Recruiter tokens only (separate cookies and throttle scope). Candidate data is read-only. **There is no export endpoint.** The one write is a broadcast to the drive's own scoped candidates.
 
 | Method | Path | Purpose |
 |---|---|---|
@@ -159,6 +167,7 @@ Recruiter tokens only (separate cookies and throttle scope). Read-only. **There 
 | GET | `drives/{drive_id}/candidates/` | Scoped candidates: `?q=` skill search (taxonomy-expanded), `?department=`, `?min_compatibility=` (each only if that field is released). Includes facets counted from the scoped set only. Logged |
 | GET | `drives/{drive_id}/candidates/{student_id}/` | One candidate, released fields only. Logged; denied attempts are logged too |
 | GET | `drives/{drive_id}/candidates/{student_id}/resume/` | 5-minute signed link to the candidate's resume, only when the grant releases `resume`. Each request is logged as a `resume` access |
+| GET/POST | `drives/{drive_id}/broadcasts/` | Own broadcasts for the drive / send `{audience: all\|shortlisted, title, body}` as an in-app notification to the grant's scoped candidates. Recipients are never returned (count only); at most `RECRUITER_BROADCASTS_PER_DAY` per drive per 24 h; delivered by Celery after re-checking the grant; logged as `broadcast` |
 
 ## Recruiter administration: `/api/v1/recruiter-admin/` (H only)
 
@@ -169,3 +178,4 @@ Recruiter tokens only (separate cookies and throttle scope). Read-only. **There 
 | GET/POST | `grants/` | Grants `{recruiter_id, drive_id, allowed_fields, candidate_scope, starts_at?, expires_at}` |
 | PATCH/DELETE | `grants/{grant_id}/` | Change fields/expiry/scope / revoke |
 | GET | `access-logs/` | Access log (`?recruiter=`, `?drive=`, `?action=`) |
+| GET | `broadcasts/` | Every recruiter broadcast in the institution (`?drive=`) |

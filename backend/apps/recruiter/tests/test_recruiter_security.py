@@ -14,11 +14,8 @@ from apps.accounts.roles import Role
 from apps.accounts.services import issue_tokens
 from apps.core.models import Institution
 from apps.drives import services as drive_services
-from apps.evidence.models import SourceType
-from apps.matching.services import run_drive_matching
 from apps.recruiter import services
 from apps.recruiter.models import AccessAction, AccessLog
-from apps.taxonomy.models import Level
 
 pytestmark = pytest.mark.django_db
 ALL_FIELDS = [
@@ -33,44 +30,6 @@ ALL_FIELDS = [
     "evidence",
     "registration_status",
 ]
-
-
-@pytest.fixture
-def world(make_user, make_student, make_drive, taxonomy, give_evidence, head):
-    """Drive A and Drive B with disjoint registrations; recruiter A granted on Drive A only."""
-    django = taxonomy("Django")
-    drive_a = make_drive(role="Backend Engineer", company="Alpha", requirements=[(django, Level.INTERMEDIATE, 1, True)])
-    drive_b = make_drive(
-        role="Data Analyst", company="Beta", requirements=[(taxonomy("SQL"), Level.INTERMEDIATE, 1, True)]
-    )
-    in_a = make_student(name="InA")
-    in_b = make_student(name="InB")
-    unregistered = make_student(name="Nowhere")
-    for s in (in_a, in_b, unregistered):
-        give_evidence(s, SourceType.PROJECT, f"{s.name} project", [(django, Level.INTERMEDIATE)], verified=True)
-    drive_services.register(drive_a, in_a)
-    drive_services.register(drive_b, in_b)
-    run_drive_matching(drive_a)
-    run_drive_matching(drive_b)
-    recruiter_a = make_user(email="rec-a@alpha.example", roles=[Role.RECRUITER])
-    recruiter_b = make_user(email="rec-b@beta.example", roles=[Role.RECRUITER])
-    grant_a = services.create_grant(
-        recruiter=recruiter_a,
-        drive=drive_a,
-        allowed_fields=["name", "skills"],
-        expires_at=timezone.now() + timedelta(days=7),
-        granted_by=head,
-    )
-    return {
-        "drive_a": drive_a,
-        "drive_b": drive_b,
-        "in_a": in_a,
-        "in_b": in_b,
-        "unregistered": unregistered,
-        "recruiter_a": recruiter_a,
-        "recruiter_b": recruiter_b,
-        "grant_a": grant_a,
-    }
 
 
 def recruiter_client(user):
@@ -274,7 +233,8 @@ def test_no_write_or_export_endpoints(world):
         assert getattr(client, method)(url, {}, format="json").status_code == 405
     routes = [str(p.pattern) for p in recruiter_urls.urlpatterns]
     assert not [r for r in routes if any(word in r for word in ("export", "csv", "download", "bulk"))]
-    # Recruiter routes are auth plus read-only candidate browsing; nothing else exists.
+    # Recruiter routes are auth, read-only candidate browsing and one drive-scoped broadcast
+    # endpoint (tests in test_broadcasts.py); nothing else exists.
     assert sorted(routes) == sorted(
         [
             "auth/login/",
@@ -286,6 +246,7 @@ def test_no_write_or_export_endpoints(world):
             "drives/<int:drive_id>/candidates/",
             "drives/<int:drive_id>/candidates/<int:student_id>/",
             "drives/<int:drive_id>/candidates/<int:student_id>/resume/",  # one signed link per logged request
+            "drives/<int:drive_id>/broadcasts/",
         ]
     )
 

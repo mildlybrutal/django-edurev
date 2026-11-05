@@ -1,0 +1,14 @@
+# Extends gitleaks' default rules. Test suites log in with throwaway fixture passwords
+# (e.g. "Rec-Pass-12345") that are never used outside the test database, so test
+# files are exempt. Real secrets belong in .env, which is git-ignored.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Throwaway credentials in automated tests"
+paths = [
+  '''backend/apps/[^/]+/tests/.*\.py$''',
+  '''backend/conftest\.py$''',
+  '''frontend/e2e/.*\.ts$''',
+  '''frontend/.*\.test\.tsx?$''',
+]

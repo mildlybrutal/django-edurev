@@ -23,7 +23,7 @@ class ScoringConfig(TenantModel):
     weight_communication = models.PositiveSmallIntegerField(default=20)
     weight_project_depth = models.PositiveSmallIntegerField(default=20)
     weight_coding = models.PositiveSmallIntegerField(
-        default=10, help_text="Coding activity (GitHub/LeetCode ratings): unverified external evidence."
+        default=10, help_text="Coding activity (GitHub/LeetCode/Codeforces ratings): unverified external evidence."
     )
     unverified_multiplier = models.DecimalField(
         max_digits=3,

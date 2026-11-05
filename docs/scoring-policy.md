@@ -63,7 +63,7 @@ Five dimensions, each 0–100. Defaults are shown in brackets. The P06 specifica
 | Aptitude | Mean of the latest **K** aptitude assessments [K = 3] | same |
 | Communication | Mean of the latest **K** communication assessments and mock-interview communication scores | same |
 | Project depth | `min(1, Σ project points / target) × 100`. A project scores `(1 if verified else multiplier) × min(skills tagged, 3)/3` [target = 3] | same |
-| Coding activity | Mean of the student's synced GitHub and LeetCode ratings (§9); 0 when none is linked or synced | same |
+| Coding activity | Mean of the student's synced GitHub, LeetCode and Codeforces ratings (§9); 0 when none is linked or synced | same |
 
 ```
 overall = Σ weight_d × score_d / Σ weight_d     weights [technical 40, aptitude 20, communication 20, project depth 20, coding activity 10]
@@ -104,13 +104,15 @@ Gaps are ranked by impact score.
 - **Batch:** the batch-readiness job rebuilds every student's claims and readiness, then rematches every active drive.
 - **Measured** on the development machine: **5,000 students in 14.0 s** (24.7 s including one active-drive rematch), against the specification's 15-minute target.
 
-## 9. Coding activity ratings (GitHub, LeetCode)
+## 9. Coding activity ratings (GitHub, LeetCode, Codeforces)
 
 An implementation choice, added at the project owner's request. Not part of the P06 specification.
 
-**Sources.** Students link usernames, not URLs, so the server only ever calls two fixed hosts:
+**Sources.** Students link usernames, not URLs, so the server only ever calls three fixed hosts:
 - **GitHub:** the official REST API (`/users/{u}`, `/users/{u}/repos`, `/users/{u}/events/public`). It allows 60 unauthenticated requests per hour; setting `GITHUB_TOKEN` raises that limit.
 - **LeetCode:** its public GraphQL endpoint. **This is unofficial and undocumented.** It can change or start rate-limiting without notice, and the UI labels LeetCode figures as coming from an unofficial source.
+- **Codeforces:** the official public API (`user.info`, `user.rating`, `user.status`). It allows about one call every two seconds, so the three calls for a profile are spaced 2.1 s apart. An unknown handle is reported as "profile not found".
+- **CodeChef** has no official public API, so it stays a manually added evidence item (no scraping).
 
 **Sync.**
 - Sync runs on the Celery worker when a handle is set.
@@ -129,10 +131,13 @@ An implementation choice, added at the project owner's request. Not part of the 
 | | Stars received, `log10(1 + stars)` | 2 (≈ 99 stars) | 0.10 |
 | LeetCode | Solved, weighted easy×1, medium×2, hard×3 | 600 | 0.70 (1.0 with no contest history) |
 | | Contest rating above 1200 | 1000 | 0.30 |
+| Codeforces | Distinct problems solved (accepted at least once) | 300 | 0.45 (0.70 when unrated) |
+| | Problems with a problem rating of 1600+ solved | 50 | 0.20 (0.30 when unrated) |
+| | Contest rating above 800 | 1200 | 0.35 (dropped when unrated) |
 
 **Evidence, not proof.**
-- Each synced profile becomes one evidence item of type GitHub or LeetCode. It is **self-reported** unless a mentor verifies it, and it is updated in place on every re-sync.
-- LeetCode volume lets the student *claim* a DSA level (≥50 solved → Intermediate, ≥200 → Advanced, ≥500 → Expert).
+- Each synced profile becomes one evidence item of type GitHub, LeetCode or Codeforces. It is **self-reported** unless a mentor verifies it, and it is updated in place on every re-sync.
+- LeetCode or Codeforces solved count lets the student *claim* a DSA level (≥50 solved → Intermediate, ≥200 → Advanced, ≥500 → Expert).
 - GitHub languages claim Beginner, or Intermediate when used in 3 or more repositories.
 - The §2 evidence-rule caps still apply, so unverified external activity counts at Beginner by default. For example, 500 LeetCode problems do **not** make a student an Expert in DSA.
 - Faculty verification attests that the account belongs to the student, so verification survives a re-sync.

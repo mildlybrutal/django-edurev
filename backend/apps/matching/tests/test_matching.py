@@ -183,3 +183,32 @@ def test_batch_readiness_rematches_active_drives(make_student, make_drive, taxon
     result = run_batch_readiness(s.institution_id, nudge_below=None)
     assert result["drives_rematched"] == 1
     assert float(MatchResult.objects.get(drive=drive, student=s).compatibility) == 100.0
+
+
+def test_publishing_notifies_students_of_a_match_or_the_missed_criteria(
+    make_student, make_drive, taxonomy, give_evidence
+):
+    """P06 notifications: 'new drive matching profile' and 'eligibility met/missed with reason'."""
+    from apps.notifications.models import Notification
+
+    eligible = make_student(cgpa="8.50")
+    give_evidence(eligible, SourceType.PROJECT, "API", [(taxonomy("Django"), INT)], verified=True)
+    ineligible = make_student(cgpa="6.20")
+    drive = make_drive(requirements=[(taxonomy("Django"), INT, 1, True)], rules=[(RuleType.MIN_CGPA, 7.0)])
+
+    services.run_drive_matching(drive, notify_students=True)
+
+    match = Notification.objects.get(recipient=eligible.user)
+    assert match.kind == "new_drive_match"
+    assert "100% skill match" in match.title and match.link == f"/student/drives/{drive.pk}"
+    missed = Notification.objects.get(recipient=ineligible.user)
+    assert missed.kind == "eligibility_missed"
+    assert "CGPA" in missed.body  # the failed criterion is named, not just "not eligible"
+
+
+def test_rematching_without_the_flag_sends_nothing(make_student, make_drive, taxonomy):
+    from apps.notifications.models import Notification
+
+    make_student()
+    services.run_drive_matching(make_drive(requirements=[(taxonomy("Django"), INT, 1, True)]))
+    assert not Notification.objects.exists()

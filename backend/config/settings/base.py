@@ -112,6 +112,7 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 RESUME_S3_PUBLIC_URL = env("RESUME_S3_PUBLIC_URL", default="")
 RESUME_MAX_BYTES = env.int("RESUME_MAX_BYTES", default=5 * 1024 * 1024)
 RESUME_URL_EXPIRY_SECONDS = env.int("RESUME_URL_EXPIRY_SECONDS", default=300)
+CERTIFICATE_MAX_BYTES = env.int("CERTIFICATE_MAX_BYTES", default=5 * 1024 * 1024)
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
@@ -235,6 +236,7 @@ CELERY_BEAT_SCHEDULE = {
 }
 
 PROFILE_RECOMPUTE_DEBOUNCE_SECONDS = env.int("PROFILE_RECOMPUTE_DEBOUNCE_SECONDS", default=30)
+RECRUITER_BROADCASTS_PER_DAY = env.int("RECRUITER_BROADCASTS_PER_DAY", default=5)
 NOTIFICATION_EMAIL_KINDS = env.list(
     "NOTIFICATION_EMAIL_KINDS", default=["verification_completed", "shortlist_result", "checkpoint_due"]
 )

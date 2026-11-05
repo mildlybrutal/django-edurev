@@ -33,3 +33,30 @@ export async function upload<T>(path: string, form: FormData): Promise<T> {
   if (!response.ok) throw new ApiError(response.status, data);
   return data as T;
 }
+
+/** Fetch a file (Excel exports) and hand it to the browser as a download. */
+export async function download(path: string, fallbackName: string): Promise<void> {
+  const response = await apiFetch(new Request(new URL(path, window.location.origin), { method: "GET" }));
+  if (!response.ok) {
+    const text = await response.text();
+    throw new ApiError(response.status, text ? JSON.parse(text) : undefined);
+  }
+  const disposition = response.headers.get("Content-Disposition") ?? "";
+  const name = /filename="([^"]+)"/.exec(disposition)?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await response.blob());
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+/** Build a query string from filters, dropping empty values. */
+export function qs(params: Record<string, string | number | boolean | undefined | null>): string {
+  const search = new URLSearchParams();
+  for (const [k, v] of Object.entries(params)) if (v !== undefined && v !== null && v !== "") search.set(k, String(v));
+  const s = search.toString();
+  return s ? `?${s}` : "";
+}

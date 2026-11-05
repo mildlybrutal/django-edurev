@@ -18,7 +18,7 @@ RELEASABLE_FIELDS = {
     "skills": "Skill profile (levels and verification status)",
     "evidence": "Evidence titles, types and verification status (no files or links)",
     "registration_status": "Registration / shortlist status",
-    "coding_activity": "Coding-activity rating (GitHub / LeetCode, unverified)",
+    "coding_activity": "Coding-activity rating (GitHub / LeetCode / Codeforces, unverified)",
     "resume": "Resume (PDF, short-lived view link; each view is logged)",
 }
 DEFAULT_FIELDS = ["name", "department", "graduation_year", "compatibility", "skills", "registration_status"]
@@ -62,6 +62,7 @@ class AccessAction(models.TextChoices):
     SEARCH = "search", "Searched candidates"
     DETAIL = "detail", "Viewed candidate"
     RESUME = "resume", "Opened resume"
+    BROADCAST = "broadcast", "Sent broadcast"
     DENIED = "denied", "Access denied"
 
 
@@ -83,3 +84,30 @@ class AccessLog(AppendOnlyModel):
 
     def __str__(self):
         return f"{self.recruiter_id} {self.action} {self.path}"
+
+
+class BroadcastAudience(models.TextChoices):
+    ALL = "all", "All candidates in my access"
+    SHORTLISTED = "shortlisted", "Shortlisted candidates only"
+
+
+class RecruiterBroadcast(TenantModel):
+    """A message a recruiter sends to the candidates of a drive they hold a valid grant for. The
+    recipients are resolved from the grant's scoped candidate set (never a recruiter-supplied
+    list) and delivered as in-app notifications; the recruiter only ever sees the count."""
+
+    grant = models.ForeignKey(RecruiterAccessGrant, on_delete=models.PROTECT, related_name="broadcasts")
+    recruiter = models.ForeignKey("accounts.User", on_delete=models.PROTECT, related_name="+")
+    drive = models.ForeignKey("drives.Drive", on_delete=models.CASCADE, related_name="recruiter_broadcasts")
+    audience = models.CharField(max_length=20, choices=BroadcastAudience.choices, default=BroadcastAudience.ALL)
+    title = models.CharField(max_length=120)
+    body = models.TextField(max_length=2000)
+    recipient_count = models.PositiveIntegerField(default=0)
+    sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["drive", "recruiter", "created_at"])]
+
+    def __str__(self):
+        return f"{self.recruiter_id} -> drive {self.drive_id}: {self.title}"

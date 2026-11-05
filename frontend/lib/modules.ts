@@ -1,6 +1,6 @@
 /**
  * Module hues: each skill cluster owns one flat colour, like the colour-coded modules of a
- * coaching booklet. Violet is never a module; it is reserved for "your next step".
+ * coaching booklet. The `next` blue is never a module; it is reserved for "your next step".
  */
 export type ModuleHue = "cobalt" | "teal" | "green" | "marigold" | "crimson";
 

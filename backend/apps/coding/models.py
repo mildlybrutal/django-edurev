@@ -9,6 +9,7 @@ from apps.core.models import TenantModel
 class Platform(models.TextChoices):
     GITHUB = "github", "GitHub"
     LEETCODE = "leetcode", "LeetCode"
+    CODEFORCES = "codeforces", "Codeforces"
 
 
 class SyncStatus(models.TextChoices):

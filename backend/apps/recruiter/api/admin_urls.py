@@ -7,5 +7,6 @@ urlpatterns = [
     path("recruiters/", views.RecruiterListView.as_view(), name="recruiter-admin-recruiters"),
     path("grants/", views.GrantListView.as_view(), name="recruiter-admin-grants"),
     path("grants/<int:grant_id>/", views.GrantDetailView.as_view(), name="recruiter-admin-grant"),
+    path("broadcasts/", views.BroadcastLogListView.as_view(), name="recruiter-admin-broadcasts"),
     path("access-logs/", views.AccessLogListView.as_view(), name="recruiter-admin-logs"),
 ]

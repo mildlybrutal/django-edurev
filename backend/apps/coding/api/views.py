@@ -41,6 +41,7 @@ class CodingProfileSerializer(serializers.ModelSerializer):
 class CodingInput(serializers.Serializer):
     github_username = serializers.CharField(required=False, allow_blank=True, max_length=60)
     leetcode_username = serializers.CharField(required=False, allow_blank=True, max_length=60)
+    codeforces_username = serializers.CharField(required=False, allow_blank=True, max_length=60)
 
 
 def _payload(student):
@@ -72,6 +73,7 @@ class CodingView(APIView):
                 student,
                 github=data.validated_data.get("github_username"),
                 leetcode=data.validated_data.get("leetcode_username"),
+                codeforces=data.validated_data.get("codeforces_username"),
             )
         except services.CodingError as exc:
             return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)

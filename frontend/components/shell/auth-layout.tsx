@@ -5,7 +5,7 @@ import { ThemeSwitch } from "./theme-switch";
 const STEPS = [
   {
     n: "01",
-    // The cobalt module would vanish on the cobalt panel; the first spine is white instead.
+    // White and navy spines; an orange module hue would vanish on the orange panel.
     hue: "bg-rail-active",
     title: "Evidence",
     body: "Projects, assessments, GitHub and LeetCode, verified by faculty.",
@@ -18,13 +18,13 @@ const STEPS = [
   },
   {
     n: "03",
-    hue: "bg-mod-marigold",
+    hue: "bg-mod-cobalt",
     title: "Plan",
     body: "Ranked gaps turned into dated checkpoints before each drive.",
   },
 ];
 
-/** Sign-in and sign-up frame: committed cobalt panel with the product story, form on the right. */
+/** Sign-in and sign-up frame: committed orange panel with the product story, form on the right. */
 export function AuthLayout({
   title,
   description,

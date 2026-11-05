@@ -2,6 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, type FormEvent } from "react";
+import {
+  CERTIFICATE_ACCEPT,
+  CertificateUpload,
+  CertificateViewButton,
+  certificateProblem,
+  uploadCertificate,
+} from "@/components/domain/certificate";
 import { SkillPicker } from "@/components/domain/skill-picker";
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +26,11 @@ type Evidence = Schemas["Evidence"];
 
 const SOURCES: { value: string; label: string; hint: string }[] = [
   { value: "project", label: "Project", hint: "Something you built. Link the repository or demo." },
-  { value: "certification", label: "Certification", hint: "Course or certificate. Add the certificate ID." },
+  {
+    value: "certification",
+    label: "Certification",
+    hint: "Course or certificate. Upload the certificate (PDF or image) and add its ID.",
+  },
   { value: "github", label: "GitHub", hint: "Your GitHub profile or a notable repository." },
   {
     value: "leetcode",
@@ -132,6 +143,7 @@ function EvidenceRow({ item }: { item: Evidence }) {
           {item.source_url}
         </a>
       )}
+      {item.certificate && <p className="mt-1 text-xs text-muted">Certificate: {item.certificate.name}</p>}
       {latest && (
         <p className="mt-2 text-xs text-muted">
           {latest.decision === "verified" ? "Verified" : "Rejected"} by {latest.reviewer} on{" "}
@@ -140,7 +152,12 @@ function EvidenceRow({ item }: { item: Evidence }) {
         </p>
       )}
       {!item.is_institutional && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <CertificateViewButton item={item} />
+          {item.source_type === "certification" &&
+            (item.verification_status === "self_reported" || item.verification_status === "rejected") && (
+              <CertificateUpload item={item} />
+            )}
           {item.verification_status === "self_reported" && (
             <Button
               variant="secondary"
@@ -176,25 +193,40 @@ function AddEvidence() {
   const [reference, setReference] = useState("");
   const [tags, setTags] = useState<{ skill_id: number; name: string; claimed_level: number }[]>([]);
   const [requestVerification, setRequestVerification] = useState(true);
+  const [file, setFile] = useState<File | null>(null);
+  const [fileKey, setFileKey] = useState(0); // remounts the native input so it clears after submit
+  const withFile = source === "certification" && file !== null;
+  const fileProblem = withFile ? certificateProblem(file) : null;
   const create = useMutation({
     meta: { toast: "Evidence added", toastBody: "Your skill profile and readiness update shortly." },
-    mutationFn: () =>
-      post("/api/v1/evidence/", {
+    mutationFn: async () => {
+      const verify = requestVerification && tags.length > 0;
+      // A file can only be attached before review starts, so upload first and ask for
+      // verification afterwards.
+      const item = await post<Evidence>("/api/v1/evidence/", {
         source_type: source,
         title,
         description,
         source_url: url,
         external_reference: reference,
         tags: tags.map(({ skill_id, claimed_level }) => ({ skill_id, claimed_level })),
-        request_verification: requestVerification && tags.length > 0,
-      }),
+        request_verification: verify && !withFile,
+      });
+      if (withFile) {
+        await uploadCertificate(item.id, file);
+        if (verify) await post(`/api/v1/evidence/${item.id}/request-verification/`);
+      }
+      return item;
+    },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: ["evidence"] }),
     onSuccess: () => {
       setTitle("");
       setDescription("");
       setUrl("");
       setReference("");
+      setFile(null);
+      setFileKey((k) => k + 1);
       setTags([]);
-      queryClient.invalidateQueries({ queryKey: ["evidence"] });
       queryClient.invalidateQueries({ queryKey: ["profile"] });
     },
   });
@@ -233,6 +265,25 @@ function AddEvidence() {
             value={reference}
             onChange={(e) => setReference(e.target.value)}
           />
+          {source === "certification" && (
+            <div className="flex flex-col gap-1">
+              <label htmlFor="certificate-file" className="text-sm font-medium">
+                Certificate file
+              </label>
+              <input
+                key={fileKey}
+                id="certificate-file"
+                type="file"
+                accept={CERTIFICATE_ACCEPT}
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="text-sm file:mr-3 file:h-8 file:rounded-md file:border file:border-border file:bg-surface file:px-3 file:text-sm file:text-foreground hover:file:bg-surface-muted"
+              />
+              <p className="text-xs text-muted">
+                PDF, PNG or JPEG, up to 5 MB. Only you, your mentor and the placement cell can open it.
+              </p>
+              {fileProblem && <FormError message={fileProblem} />}
+            </div>
+          )}
           <fieldset className="flex flex-col gap-2">
             <legend className="mb-1 text-sm font-medium">Skills shown</legend>
             {tags.map((t, i) => (
@@ -282,7 +333,7 @@ function AddEvidence() {
             Unverified evidence counts for less, and external platform activity alone cannot establish advanced levels.
           </p>
           {create.error ? <FormError message={errorMessage(create.error)} /> : null}
-          <Button type="submit" disabled={!title.trim() || create.isPending}>
+          <Button type="submit" disabled={!title.trim() || create.isPending || fileProblem !== null}>
             Add evidence
           </Button>
         </form>

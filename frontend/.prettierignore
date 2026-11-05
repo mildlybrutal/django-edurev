@@ -3,3 +3,4 @@ lib/api/schema.d.ts
 node_modules
 test-results
 playwright-report
+openapi.yml

@@ -13,7 +13,7 @@ After you sign up, a pop-up asks for your GitHub and LeetCode usernames, your Li
    - Coding-platform activity alone can't establish more than *Beginner*.
    - Assessments and mock interviews recorded by staff appear here automatically as verified.
 2. **My Profile:** your academic record (read-only), profile-completion checklist, and skill profile. Select a skill to see exactly which evidence supports it.
-   - **Coding activity:** your GitHub and LeetCode ratings (0–100), synced from public data. Select *How this is rated* to see each part of a rating. This is the fifth readiness dimension, and it counts as unverified evidence. LeetCode data comes from an unofficial source.
+   - **Coding activity:** your GitHub, LeetCode and Codeforces ratings (0–100), synced from public data. Select *How this is rated* to see each part of a rating. This is the fifth readiness dimension, and it counts as unverified evidence. LeetCode data comes from an unofficial source.
    - **Resume:** upload, replace, view or delete it. Your mentor and the placement cell can view it. A recruiter sees it only if the placement cell releases it for their drive.
 3. **Placement Drives:** for each drive you see two separate things:
    - **Eligibility:** the company's hard criteria. Each one is ticked or crossed with the reason.
@@ -33,7 +33,7 @@ After you sign up, a pop-up asks for your GitHub and LeetCode usernames, your Li
 ## Placement officers and head
 
 1. **Placement Drives → New drive:** company, role, dates. The drive starts as a draft that students can't see.
-2. **Job description tab:** paste the JD and select *Process JD*. Review the extracted skills (level, weight, mandatory) and eligibility criteria, untick anything wrong, and select *Apply to drive*. Processing is rule-based against the institution's skill taxonomy; there is no AI.
+2. **Job description tab:** paste the JD and select *Process JD*, or select *Upload PDF, Word or .txt* to read the text from a file (scanned PDFs have no text layer, so paste those instead). Review the extracted skills (level, weight, mandatory) and eligibility criteria, untick anything wrong, and select *Apply to drive*. Processing is rule-based against the institution's skill taxonomy; there is no AI.
 3. **Requirements & eligibility:** adjust requirements and criteria, or apply a role template, then select **Publish**. This opens registration, evaluates every student and notifies them.
 4. **Matching & shortlist:** eligibility, skill match and readiness side by side, with filters. Select a student to see their full evaluation. After *Close registration*, set shortlist and selection decisions; students are notified.
 5. **Supply vs demand** (drive tab), **Reports** and **Batch Analytics:**

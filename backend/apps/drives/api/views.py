@@ -1,8 +1,10 @@
 from django.db.models import Max, Prefetch
+from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound, PermissionDenied
+from rest_framework.parsers import JSONParser, MultiPartParser
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 
@@ -10,6 +12,7 @@ from apps.accounts.roles import Role, has_role
 from apps.core.api import service_call
 from apps.core.models import BackgroundJob
 from apps.drives import services
+from apps.drives.jd_files import JDFileError, extract_jd_text
 from apps.drives.models import (
     Company,
     Drive,
@@ -126,7 +129,15 @@ class DriveUpdateSerializer(serializers.Serializer):
 
 
 class JDInput(serializers.Serializer):
-    text = serializers.CharField()
+    """Either pasted `text` (JSON) or an uploaded `file` (multipart: PDF, DOCX or TXT)."""
+
+    text = serializers.CharField(required=False)
+    file = serializers.FileField(required=False)
+
+    def validate(self, attrs):
+        if bool(attrs.get("text", "").strip()) == bool(attrs.get("file")):
+            raise serializers.ValidationError("Paste the JD text or upload a JD file (one of the two).")
+        return attrs
 
 
 class JDApplySkill(serializers.Serializer):
@@ -330,8 +341,8 @@ class DriveViewSet(viewsets.ModelViewSet):
 
     # --- JD ---------------------------------------------------------------------------------
 
-    @extend_schema(request=JDInput, responses=DriveSerializer)
-    @action(detail=True, methods=["get", "post"])
+    @extend_schema(request={"application/json": JDInput, "multipart/form-data": JDInput}, responses=DriveSerializer)
+    @action(detail=True, methods=["get", "post"], parser_classes=[JSONParser, MultiPartParser])
     def jd(self, request, pk=None):
         drive = self.get_object()
         if request.method == "GET":
@@ -340,7 +351,10 @@ class DriveViewSet(viewsets.ModelViewSet):
             )
         data = JDInput(data=request.data)
         data.is_valid(raise_exception=True)
-        _drive_error(services.submit_jd, drive, data.validated_data["text"])
+        text = data.validated_data.get("text")
+        if text is None:
+            text = service_call(extract_jd_text, data.validated_data["file"], error_types=(JDFileError,))
+        _drive_error(services.submit_jd, drive, text)
         return Response(
             {"status": drive.jd_status, "text": drive.job_description, "extraction": {}},
             status=status.HTTP_202_ACCEPTED,
@@ -411,6 +425,58 @@ class DriveViewSet(viewsets.ModelViewSet):
         if student is None:
             raise NotFound()
         return Response(evaluation_payload(drive, student, refresh=False))
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("eligible", bool),
+            OpenApiParameter("registered", bool),
+            OpenApiParameter("min_compatibility", float),
+            OpenApiParameter("q", str),
+        ],
+        responses={(200, "application/octet-stream"): OpenApiTypes.BINARY},
+    )
+    @action(detail=True, methods=["get"])
+    def export(self, request, pk=None):
+        """Excel sheet of this drive's match results with the same filters as GET match.
+        Eligibility and compatibility/readiness stay in separate columns. Audited."""
+        from apps.core.excel import workbook_response
+        from apps.core.services import record_audit
+
+        drive = self.get_object()
+        if not is_cell(request.user):
+            raise PermissionDenied()
+        rows = _match_rows(drive, request.query_params)["results"]
+        gaps = {}
+        for student_id, skill, impact in (
+            GapItem.objects.filter(analysis__drive=drive, analysis__student_id__in=[r["student_id"] for r in rows])
+            .order_by("analysis__student_id", "rank")
+            .values_list("analysis__student_id", "skill__name", "impact")
+        ):
+            gaps.setdefault(student_id, []).append(f"{skill} ({impact})")
+        columns = [
+            ("Registration number", "roll_number"),
+            ("Name", "name"),
+            ("Department", "department"),
+            ("CGPA", "cgpa"),
+            (
+                "Eligibility",
+                lambda r: "—" if r["eligible"] is None else ("Eligible" if r["eligible"] else "Not eligible"),
+            ),
+            ("Failed criteria", "failed_criteria"),
+            ("Compatibility %", "compatibility"),
+            ("Readiness %", "readiness"),
+            ("Registration status", lambda r: r["registration_status"] or "Not registered"),
+            ("Top gaps (ranked)", lambda r: gaps.get(r["student_id"], [])[:5]),
+        ]
+        record_audit(
+            actor=request.user,
+            action="drive.export",
+            target=drive,
+            request=request,
+            after={"rows": len(rows), "filters": dict(request.query_params.items())},
+        )
+        name = f"{drive.company.name}-{drive.role_title}".lower().replace(" ", "-")
+        return workbook_response(name[:60], [("Match results", columns, rows)])
 
     @action(detail=True, methods=["get"])
     def registrations(self, request, pk=None):

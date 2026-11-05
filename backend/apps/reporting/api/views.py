@@ -271,28 +271,20 @@ class FacultyDashboardView(APIView):
 
     @extend_schema(responses=OpenApiTypes.OBJECT)
     def get(self, request):
-        from apps.readiness.services import latest_general_overall
         from apps.students.models import StudentProfile
 
-        mentees = list(StudentProfile.objects.filter(mentor=request.user).select_related("user", "department"))
-        readiness = latest_general_overall([m.pk for m in mentees])
+        mentees = (
+            StudentProfile.objects.filter(mentor=request.user, institution_id=request.user.institution_id)
+            .select_related("user", "department", "mentor")
+            .order_by("roll_number")
+        )
+        rows = services.student_summaries(mentees)
         pending = pending_for_reviewer(request.user)
         return Response(
             {
-                "mentees": len(mentees),
+                "mentees": len(rows),
                 "pending_verifications": pending.count(),
-                "students": sorted(
-                    [
-                        {
-                            "id": m.pk,
-                            "name": m.name,
-                            "roll_number": m.roll_number,
-                            "department": m.department.code,
-                            "readiness": readiness.get(m.pk),
-                        }
-                        for m in mentees
-                    ],
-                    key=lambda x: (x["readiness"] is None, x["readiness"] or 0),
-                ),
+                # Lowest readiness first, so the mentor knows who to check in with.
+                "students": sorted(rows, key=lambda x: (x["readiness"] is None, x["readiness"] or 0)),
             }
         )

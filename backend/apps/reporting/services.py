@@ -10,7 +10,7 @@ from apps.drives.models import ACTIVE_STATUSES, Drive, EligibilityResult, Regist
 from apps.evidence.models import EvidenceItem, VerificationStatus
 from apps.matching.models import GapItem, MatchResult
 from apps.notifications.services import notify
-from apps.planning.models import ItemStatus, PlanItem
+from apps.planning.models import ItemStatus, PlanItem, PlanStatus
 from apps.profiles.models import SkillClaim
 from apps.readiness import services as readiness_services
 from apps.readiness.models import ReadinessSnapshot
@@ -390,3 +390,64 @@ def training_effectiveness(institution_id):
         "note": "Engaged = completed at least half of their preparation-plan items. Observational comparison; "
         "differences are not proof that the plan caused the change.",
     }
+
+
+def student_summaries(students):
+    """One summary row per student (academics, readiness, evidence by status, drives, plan
+    progress), computed with a fixed number of grouped queries. Used by the faculty mentee table
+    and the staff Excel export. Readiness is the general snapshot, never mixed with eligibility."""
+    students = list(students)
+    ids = [s.pk for s in students]
+    readiness = readiness_services.latest_general_overall(ids)
+    evidence = defaultdict(Counter)
+    for sid, st, n in (
+        EvidenceItem.objects.filter(student_id__in=ids)
+        .values_list("student_id", "verification_status")
+        .annotate(n=Count("id"))
+    ):
+        evidence[sid][st] = n
+    registrations = dict(
+        Registration.objects.filter(student_id__in=ids)
+        .exclude(status=RegistrationStatus.WITHDRAWN)
+        .values_list("student_id")
+        .annotate(n=Count("id"))
+    )
+    eligible = dict(
+        EligibilityResult.objects.filter(student_id__in=ids, is_eligible=True, drive__status__in=ACTIVE_STATUSES)
+        .values_list("student_id")
+        .annotate(n=Count("id"))
+    )
+    plans = {
+        sid: (done, total)
+        for sid, done, total in PlanItem.objects.filter(plan__student_id__in=ids, plan__status=PlanStatus.ACTIVE)
+        .values_list("plan__student_id")
+        .annotate(done=Count("id", filter=Q(status=ItemStatus.DONE)), total=Count("id"))
+    }
+    rows = []
+    for s in students:
+        ev = evidence[s.pk]
+        done, total = plans.get(s.pk, (0, 0))
+        rows.append(
+            {
+                "id": s.pk,
+                "name": s.name,
+                "email": s.user.email,
+                "roll_number": s.roll_number,
+                "department": s.department.code,
+                "graduation_year": s.graduation_year,
+                "cgpa": float(s.cgpa),
+                "active_backlogs": s.active_backlogs,
+                "academic_record_verified": s.academic_record_verified,
+                "mentor": (s.mentor.get_full_name() or s.mentor.email) if s.mentor_id else None,
+                "readiness": readiness.get(s.pk),
+                "evidence_total": sum(ev.values()),
+                "evidence_verified": ev.get(VerificationStatus.VERIFIED, 0),
+                "evidence_pending": ev.get(VerificationStatus.PENDING, 0),
+                "evidence_rejected": ev.get(VerificationStatus.REJECTED, 0),
+                "registrations": registrations.get(s.pk, 0),
+                "eligible_drives": eligible.get(s.pk, 0),
+                "plan_done": done,
+                "plan_total": total,
+            }
+        )
+    return rows

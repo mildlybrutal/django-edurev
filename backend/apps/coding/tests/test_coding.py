@@ -221,3 +221,99 @@ def test_mentor_and_officer_can_read_ratings(make_student, faculty, officer, as_
     for user in (faculty, officer):
         body = as_user(user).get(f"/api/v1/students/{student.pk}/coding/").json()
         assert body["coding_activity"] is not None
+
+
+CODEFORCES_STATS = {
+    "username": "sana_cf",
+    "profile_url": "https://codeforces.com/profile/sana_cf",
+    "rating": 1500,
+    "max_rating": 1620,
+    "rank": "specialist",
+    "contests_attended": 12,
+    "solved_total": 180,
+    "solved_1600_plus": 20,
+    "median_solved_rating": 1200,
+}
+
+
+def test_codeforces_rating_is_explainable_and_drops_contest_when_unrated():
+    score, exp = rating.codeforces_rating(CODEFORCES_STATS)
+    parts = {c["key"]: c for c in exp["components"]}
+    assert parts["solved"]["points"] == pytest.approx(45 * 180 / 300, abs=0.1)
+    assert parts["hard"]["points"] == pytest.approx(20 * 20 / 50, abs=0.1)
+    assert parts["contest"]["points"] == pytest.approx(35 * 700 / 1200, abs=0.1)
+    assert score == pytest.approx(sum(p["points"] for p in parts.values()), abs=0.01)
+    unrated, exp2 = rating.codeforces_rating({**CODEFORCES_STATS, "rating": None})
+    assert [c["key"] for c in exp2["components"]] == ["solved", "hard"]
+    assert unrated == pytest.approx(70 * 180 / 300 + 30 * 20 / 50, abs=0.1)
+    huge, _ = rating.codeforces_rating({**CODEFORCES_STATS, "solved_total": 10**6, "rating": 4000})
+    assert huge <= 100
+
+
+def test_codeforces_client_counts_distinct_accepted_problems():
+    def sub(contest, index, verdict, problem_rating=None):
+        return {"verdict": verdict, "problem": {"contestId": contest, "index": index, "rating": problem_rating}}
+
+    responses = [
+        {"status": "OK", "result": [{"handle": "Sana_CF", "rating": 1500, "maxRating": 1620, "rank": "specialist"}]},
+        {"status": "OK", "result": [{"contestId": 1}, {"contestId": 2}]},
+        {
+            "status": "OK",
+            "result": [
+                sub(1, "A", "OK", 800),
+                sub(1, "A", "OK", 800),  # same problem twice counts once
+                sub(1, "B", "WRONG_ANSWER", 1200),
+                sub(2, "C", "OK", 1700),
+                sub(2, "D", "OK"),  # unrated problem still counts as solved
+            ],
+        },
+    ]
+    pauses = []
+    with mock.patch.object(clients, "_request", side_effect=responses):
+        stats = clients.fetch_codeforces("sana_cf", pause=pauses.append)
+    assert (stats["username"], stats["rating"], stats["contests_attended"]) == ("Sana_CF", 1500, 2)
+    assert (stats["solved_total"], stats["solved_1600_plus"]) == (3, 1)
+    assert pauses == [clients.CODEFORCES_CALL_GAP] * 2  # calls spaced for the API rate limit
+
+
+def test_codeforces_unknown_handle_is_not_found():
+    with mock.patch.object(clients, "_request", side_effect=clients.FetchError("HTTP 400")):
+        with pytest.raises(clients.ProfileNotFound):
+            clients.fetch_codeforces("nobody_here", pause=lambda s: None)
+    with mock.patch.object(clients, "_request", return_value={"status": "FAILED", "comment": "Call limit exceeded"}):
+        with pytest.raises(clients.FetchError):
+            clients.fetch_codeforces("sana_cf", pause=lambda s: None)
+    with pytest.raises(clients.ProfileNotFound):
+        clients.fetch_codeforces("x y", pause=lambda s: None)  # rejected before any request
+
+
+def test_codeforces_sync_records_capped_unverified_dsa_evidence(make_student, taxonomy):
+    student = make_student()
+    profile = CodingProfile.objects.create(
+        institution_id=student.institution_id, student=student, platform="codeforces", username="sana_cf"
+    )
+    with mock.patch.object(clients, "fetch_codeforces", return_value=CODEFORCES_STATS):
+        services.sync(profile)
+    profile.refresh_from_db()
+    assert profile.status == SyncStatus.OK and float(profile.score) > 0
+    item = profile.evidence
+    assert item.source_type == SourceType.CODEFORCES
+    assert item.verification_status == VerificationStatus.SELF_REPORTED
+    assert item.title == "Codeforces: 180 problems solved, rating 1500"
+    assert item.skill_tags.get().claimed_level == Level.INTERMEDIATE
+    recompute_profile(student)
+    assert SkillClaim.objects.get(student=student, skill=taxonomy("DSA")).level == Level.BEGINNER
+
+
+def test_api_accepts_codeforces_handle(make_student, as_user, django_capture_on_commit_callbacks):
+    student = make_student()
+    with mock.patch("apps.coding.tasks.sync_coding_profile.delay") as delay:
+        with django_capture_on_commit_callbacks(execute=True):
+            response = as_user(student.user).post(
+                "/api/v1/students/me/coding/", {"codeforces_username": "sana_cf"}, format="json"
+            )
+    assert response.status_code == 200, response.content
+    assert delay.call_count == 1
+    assert [p["platform"] for p in response.json()["profiles"]] == ["codeforces"]
+    bad = as_user(student.user).post("/api/v1/students/me/coding/", {"codeforces_username": "a!"}, format="json")
+    assert bad.status_code == 400

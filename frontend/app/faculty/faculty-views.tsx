@@ -2,7 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { CertificateViewButton } from "@/components/domain/certificate";
+import { ExportButton } from "@/components/domain/export-button";
 import { SkillPicker } from "@/components/domain/skill-picker";
 import { PageHeader } from "@/components/shell/page-header";
 import { Badge } from "@/components/ui/badge";
@@ -15,8 +17,8 @@ import { pct, StatCard, StatGrid } from "@/components/ui/stat";
 import { errorMessage, QueryState } from "@/components/ui/states";
 import { Table, Td, Th } from "@/components/ui/table";
 import { api, unwrap, type Schemas } from "@/lib/api/client";
-import { get, post } from "@/lib/api/request";
-import type { FacultyDashboard } from "@/lib/api/types";
+import { get, post, qs } from "@/lib/api/request";
+import type { FacultyDashboard, StudentSummary } from "@/lib/api/types";
 
 export function FacultyDashboardView() {
   const query = useQuery({
@@ -47,21 +49,44 @@ export function FacultyDashboardView() {
   );
 }
 
-export function MenteeTable({ rows }: { rows: FacultyDashboard["students"] }) {
+const BANDS = [
+  { value: "", label: "All readiness" },
+  { value: "0-40", label: "Below 40%" },
+  { value: "40-60", label: "40–60%" },
+  { value: "60-80", label: "60–80%" },
+  { value: "80-100", label: "80–100%" },
+  { value: "none", label: "Not computed" },
+];
+
+function inBand(readiness: number | null, band: string) {
+  if (!band) return true;
+  if (band === "none") return readiness === null;
+  const [low, high] = band.split("-").map(Number);
+  return readiness !== null && readiness >= low && readiness < (high >= 100 ? 101 : high);
+}
+
+export function MenteeTable({ rows, action }: { rows: StudentSummary[]; action?: ReactNode }) {
   return (
     <Card>
-      <CardHeader title="Mentees" description="Lowest readiness first, so you know who to check in with." />
+      <CardHeader
+        title="Mentees"
+        description="Lowest readiness first, so you know who to check in with. Eligibility for each drive is shown separately on the student page."
+        action={action}
+      />
       {rows.length === 0 ? (
         <div className="p-5">
-          <EmptyState title="No mentees assigned" />
+          <EmptyState title="No mentees match" />
         </div>
       ) : (
         <Table caption="Mentees">
           <thead>
             <tr>
               <Th>Student</Th>
-              <Th>Department</Th>
+              <Th>Academics</Th>
               <Th>Readiness</Th>
+              <Th>Evidence</Th>
+              <Th>Drives</Th>
+              <Th>Plan</Th>
             </tr>
           </thead>
           <tbody>
@@ -71,10 +96,32 @@ export function MenteeTable({ rows }: { rows: FacultyDashboard["students"] }) {
                   <Link className="font-medium hover:underline" href={`/faculty/students/${s.id}`}>
                     {s.name}
                   </Link>
-                  <span className="block text-xs text-muted">{s.roll_number}</span>
+                  <span className="block text-xs text-muted">
+                    {s.roll_number} · {s.department} · {s.graduation_year}
+                  </span>
                 </Td>
-                <Td>{s.department}</Td>
+                <Td className="tabular-nums">
+                  CGPA {s.cgpa.toFixed(2)}
+                  <span className="block text-xs text-muted">
+                    {s.active_backlogs} backlog(s){s.academic_record_verified ? "" : " · self-declared"}
+                  </span>
+                </Td>
                 <Td className="tabular-nums">{pct(s.readiness)}</Td>
+                <Td>
+                  <span className="tabular-nums">
+                    {s.evidence_verified}/{s.evidence_total} verified
+                  </span>
+                  {s.evidence_pending > 0 && (
+                    <span className="mt-0.5 block">
+                      <Badge tone="warning">{s.evidence_pending} pending</Badge>
+                    </span>
+                  )}
+                </Td>
+                <Td className="tabular-nums">
+                  {s.registrations} registered
+                  <span className="block text-xs text-muted">{s.eligible_drives} eligible (active)</span>
+                </Td>
+                <Td className="tabular-nums">{s.plan_total ? `${s.plan_done}/${s.plan_total} tasks` : "No plan"}</Td>
               </tr>
             ))}
           </tbody>
@@ -89,10 +136,52 @@ export function MenteesView() {
     queryKey: ["dashboard", "faculty"],
     queryFn: () => get<FacultyDashboard>("/api/v1/dashboard/faculty/"),
   });
+  const [q, setQ] = useState("");
+  const [department, setDepartment] = useState("");
+  const [band, setBand] = useState("");
+  const rows = useMemo(() => query.data?.students ?? [], [query.data]);
+  const departments = useMemo(() => [...new Set(rows.map((r) => r.department))].sort(), [rows]);
+  const needle = q.trim().toLowerCase();
+  const filtered = rows.filter(
+    (r) =>
+      (!needle || r.name.toLowerCase().includes(needle) || r.roll_number.includes(needle)) &&
+      (!department || r.department === department) &&
+      inBand(r.readiness, band),
+  );
   return (
     <>
-      <PageHeader title="My Students" />
-      <QueryState query={query}>{(d) => <MenteeTable rows={d.students} />}</QueryState>
+      <PageHeader title="My Students" description="Each mentee's academics, readiness, evidence, drives and plan." />
+      <div className="flex flex-wrap items-end gap-3">
+        <TextField label="Search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Name or reg. no." />
+        <SelectField label="Department" value={department} onChange={(e) => setDepartment(e.target.value)}>
+          <option value="">All departments</option>
+          {departments.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </SelectField>
+        <SelectField label="Readiness" value={band} onChange={(e) => setBand(e.target.value)}>
+          {BANDS.map((b) => (
+            <option key={b.value} value={b.value}>
+              {b.label}
+            </option>
+          ))}
+        </SelectField>
+      </div>
+      <QueryState query={query}>
+        {() => (
+          <MenteeTable
+            rows={filtered}
+            action={
+              <ExportButton
+                path={`/api/v1/students/export/${qs({ q: needle, department, band })}`}
+                filename="mentees"
+              />
+            }
+          />
+        )}
+      </QueryState>
     </>
   );
 }
@@ -151,6 +240,14 @@ function ReviewCard({ item }: { item: Schemas["Evidence"] }) {
           </a>
         )}
         {item.external_reference && <p className="text-muted">Reference: {item.external_reference}</p>}
+        {item.certificate ? (
+          <div className="flex items-center gap-2">
+            <CertificateViewButton item={item} />
+            <span className="text-xs text-muted">{item.certificate.name}</span>
+          </div>
+        ) : (
+          item.source_type === "certification" && <p className="text-muted">No certificate file attached.</p>
+        )}
         <div className="flex flex-wrap gap-1.5">
           {item.skill_tags.map((t) => (
             <Badge key={t.skill_id}>

@@ -91,7 +91,7 @@ export function StudentDashboardView() {
                     title="Your next steps"
                     description={
                       d.plan
-                        ? "Open tasks from your preparation plan, in order. Do the violet one first."
+                        ? "Open tasks from your preparation plan, in order. Start with the one marked NEXT."
                         : "No active plan yet. Your highest-impact gap is where to start."
                     }
                     action={

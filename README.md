@@ -3,7 +3,7 @@
 An evidence-based placement readiness platform (EduRev project P06, Track P, Path P3). It turns student evidence into verified skill profiles, evaluates **eligibility and readiness as separate computations** for each placement drive, ranks skill gaps, generates dated preparation plans, gives the placement cell batch analytics, and gives recruiters scoped, logged access to registered candidates.
 
 > **Status (2026-10-21): all 12 planned phases are implemented and tested locally; every P06 acceptance criterion is met.**
-> Last verified: 245 backend tests and 28 frontend tests pass (2026-10-31); 87% backend coverage, Playwright end-to-end tests (full journey and sign-up/onboarding) and axe accessibility checks in both themes passed on 2026-10-21. Batch readiness for 5,000 students runs in about 14–25 s on the worker (target < 15 min).
+> Last verified (2026-10-31): 245 backend tests, 28 frontend tests, Playwright end-to-end tests (full journey and sign-up/onboarding) and axe accessibility checks in both themes all pass. Backend coverage was 87% at last measurement. Batch readiness for 5,000 students runs in about 14–25 s on the worker (target < 15 min).
 > **Not yet done:** CI on GitHub, deployment, upload malware scanning, CodeChef/Codeforces sync, SSO and some CES operational items. See [`docs/status.md`](docs/status.md).
 
 ## The problem
@@ -43,7 +43,7 @@ Students are identified by their **8-digit university registration number** (e.g
 | [`docs/status.md`](docs/status.md) | What is done, measured results, acceptance-criteria evidence, what is not done |
 | [`docs/architecture.md`](docs/architecture.md) | Apps, data flow, auth and authorization, frontend, background jobs |
 | [`docs/erd.md`](docs/erd.md) | Data model diagram and database guarantees |
-| [`docs/api.md`](docs/api.md) | All 99 API paths (authoritative schema: `/api/v1/schema/`) |
+| [`docs/api.md`](docs/api.md) | Every API path (authoritative schema: `/api/v1/schema/`) |
 | [`docs/permissions-matrix.md`](docs/permissions-matrix.md) | Who can do what, and where it is tested |
 | [`docs/scoring-policy.md`](docs/scoring-policy.md) | Evidence caps, compatibility, readiness, gaps, plans: all implementation choices |
 | [`docs/data-release-policy.md`](docs/data-release-policy.md) | Exactly what recruiters can see (P06 §17) |

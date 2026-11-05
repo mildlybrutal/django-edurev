@@ -1,6 +1,6 @@
 "use client";
 
-import { CodeXml, ExternalLink, GitBranch, RefreshCw } from "lucide-react";
+import { CodeXml, ExternalLink, GitBranch, RefreshCw, Trophy } from "lucide-react";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Meter } from "@/components/ui/meter";
 import { errorMessage, QueryState } from "@/components/ui/states";
 import { VerificationBadge } from "@/components/ui/status";
 import {
+  CODEFORCES_HANDLE,
   GITHUB_USERNAME,
   handleFrom,
   LEETCODE_USERNAME,
@@ -24,6 +25,7 @@ import { cn } from "@/lib/cn";
 const PLATFORM = {
   github: { Icon: GitBranch, hue: "bg-mod-cobalt-soft text-mod-cobalt" },
   leetcode: { Icon: CodeXml, hue: "bg-mod-marigold-soft text-mod-marigold-text" },
+  codeforces: { Icon: Trophy, hue: "bg-mod-teal-soft text-mod-teal" },
 } as const;
 
 function statusTone(status: CodingProfile["status"]) {
@@ -34,6 +36,11 @@ function headline(p: CodingProfile): string {
   const s = p.stats as Record<string, number | null | undefined>;
   if (p.platform === "github") {
     return `${s.original_repos ?? 0} original repos · ${s.recent_push_events ?? 0} pushes in 90 days · ${s.stars ?? 0} stars`;
+  }
+  if (p.platform === "codeforces") {
+    return `${s.solved_total ?? 0} solved · ${s.solved_1600_plus ?? 0} rated 1600+ · ${s.contests_attended ?? 0} contests${
+      s.rating ? ` · rating ${s.rating}` : " · unrated"
+    }`;
   }
   return `${s.solved_total ?? 0} solved (${s.solved_easy ?? 0} easy · ${s.solved_medium ?? 0} medium · ${s.solved_hard ?? 0} hard)${
     s.contest_rating ? ` · contest ${s.contest_rating}` : ""
@@ -115,7 +122,7 @@ function PlatformRow({ profile }: { profile: CodingProfile }) {
 }
 
 /**
- * GitHub / LeetCode ratings for a student. `editable` (the student themself) adds handle
+ * GitHub / LeetCode / Codeforces ratings for a student. `editable` (the student themself) adds handle
  * editing and a manual refresh. Ratings are unverified external evidence.
  */
 export function CodingActivityCard({
@@ -132,7 +139,7 @@ export function CodingActivityCard({
     <Card>
       <CardHeader
         title="Coding activity"
-        description="GitHub and LeetCode, rated from public activity. Supporting evidence, not proof of expertise."
+        description="GitHub, LeetCode and Codeforces, rated from public activity. Supporting evidence, not proof of expertise."
         action={
           editable &&
           coding.data &&
@@ -213,18 +220,23 @@ export function CodingForm({
   const save = useSaveCoding();
   const [github, setGithub] = useState(initial.find((p) => p.platform === "github")?.username ?? "");
   const [leetcode, setLeetcode] = useState(initial.find((p) => p.platform === "leetcode")?.username ?? "");
+  const [codeforces, setCodeforces] = useState(initial.find((p) => p.platform === "codeforces")?.username ?? "");
   const gh = handleFrom(github, "github.com");
   const lc = handleFrom(leetcode, "leetcode.com");
+  const cf = handleFrom(codeforces, "codeforces.com");
   const ghError = gh && !GITHUB_USERNAME.test(gh) ? "Use your GitHub username, e.g. ada-lovelace." : undefined;
   const lcError =
     lc && !LEETCODE_USERNAME.test(lc) ? "Use your LeetCode username (letters, numbers, - and _)." : undefined;
+  const cfError =
+    cf && !CODEFORCES_HANDLE.test(cf) ? "Use your Codeforces handle (3–24 letters, numbers, _ . -)." : undefined;
+  const invalid = !!(ghError || lcError || cfError);
   return (
     <form
       className={cn("grid gap-4 sm:grid-cols-2", className)}
       onSubmit={(e) => {
         e.preventDefault();
-        if (ghError || lcError) return;
-        save.mutate({ github: gh, leetcode: lc }, { onSuccess: () => onDone?.() });
+        if (invalid) return;
+        save.mutate({ github: gh, leetcode: lc, codeforces: cf }, { onSuccess: () => onDone?.() });
       }}
     >
       <TextField
@@ -245,8 +257,17 @@ export function CodingForm({
         error={lcError}
         onChange={(e) => setLeetcode(e.target.value)}
       />
+      <TextField
+        label="Codeforces handle"
+        placeholder="ada_cf"
+        autoComplete="off"
+        spellCheck={false}
+        value={codeforces}
+        error={cfError}
+        onChange={(e) => setCodeforces(e.target.value)}
+      />
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-        <Button type="submit" disabled={save.isPending || !!ghError || !!lcError}>
+        <Button type="submit" disabled={save.isPending || invalid}>
           {save.isPending ? "Saving…" : "Save and sync"}
         </Button>
         <p className="text-xs text-muted">You can paste a profile link; leave a field empty to unlink it.</p>

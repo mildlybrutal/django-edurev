@@ -349,6 +349,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/drives/{id}/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Excel sheet of this drive's match results with the same filters as GET match.
+         *     Eligibility and compatibility/readiness stay in separate columns. Audited.
+         */
+        get: operations["drives_export_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/drives/{id}/jd/": {
         parameters: {
             query?: never;
@@ -634,6 +654,25 @@ export interface paths {
         patch: operations["evidence_partial_update"];
         trace?: never;
     };
+    "/api/v1/evidence/{id}/certificate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Short-lived view link for the certificate file (student, mentor, placement cell). */
+        get: operations["evidence_certificate_retrieve"];
+        put?: never;
+        /** @description Attach or replace the certificate (PDF, PNG or JPEG) of your own certification evidence. */
+        post: operations["evidence_certificate_create"];
+        /** @description Students manage their own evidence; staff read evidence of students they can see. */
+        delete: operations["evidence_certificate_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/evidence/{id}/request-verification/": {
         parameters: {
             query?: never;
@@ -645,6 +684,26 @@ export interface paths {
         put?: never;
         /** @description Students manage their own evidence; staff read evidence of students they can see. */
         post: operations["evidence_request_verification_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/evidence/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Staff-only Excel sheet of the evidence they can see (faculty: mentees), filtered by
+         *     student, verification status or source type. Files and links to files are not included.
+         */
+        get: operations["evidence_export_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -840,6 +899,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/recruiter-admin/broadcasts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Placement head review of every recruiter broadcast in the institution. */
+        get: operations["recruiter_admin_broadcasts_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/recruiter-admin/fields/": {
         parameters: {
             query?: never;
@@ -986,6 +1062,32 @@ export interface paths {
         get: operations["recruiter_drives_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/recruiter/drives/{drive_id}/broadcasts/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET — the recruiter's own broadcasts for this drive. POST — send an in-app notification to
+         *     the drive's candidates within the grant's scope. Recipients are never listed back; only the
+         *     count. Grant validity is checked on every call and each send is logged.
+         */
+        get: operations["recruiter_broadcasts_list"];
+        put?: never;
+        /**
+         * @description GET — the recruiter's own broadcasts for this drive. POST — send an in-app notification to
+         *     the drive's candidates within the grant's scope. Recipients are never listed back; only the
+         *     count. Grant validity is checked on every call and each send is logged.
+         */
+        post: operations["recruiter_broadcasts_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1632,6 +1734,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/{student_id}/drives/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /students/:id/drives — the drives a student registered for, with eligibility and
+         *     compatibility/readiness reported as separate fields, plus plan progress. Visible to the
+         *     student, their mentor and the placement cell.
+         */
+        get: operations["students_drives_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/{student_id}/profile/": {
         parameters: {
             query?: never;
@@ -1710,6 +1833,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/students/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /students/export — Excel sheet of the students the user can see (placement cell: the
+         *     institution; faculty: their mentees), with the same filters as the list plus readiness band.
+         *     Each export is audited. Not available to recruiters.
+         */
+        get: operations["students_export_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/students/faculty/": {
         parameters: {
             query?: never;
@@ -1720,6 +1864,30 @@ export interface paths {
         get: operations["students_faculty_list"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/students/import/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Placement cell bulk import. GET — blank template. POST (multipart `file`, optional
+         *     `dry_run=true`) — validate every row; apply only if all rows are valid.
+         */
+        get: operations["students_import_retrieve"];
+        put?: never;
+        /**
+         * @description Placement cell bulk import. GET — blank template. POST (multipart `file`, optional
+         *     `dry_run=true`) — validate every row; apply only if all rows are valid.
+         */
+        post: operations["students_import_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1819,10 +1987,11 @@ export interface components {
          *     * `search` - Searched candidates
          *     * `detail` - Viewed candidate
          *     * `resume` - Opened resume
+         *     * `broadcast` - Sent broadcast
          *     * `denied` - Access denied
          * @enum {string}
          */
-        ActionEnum: "list" | "search" | "detail" | "resume" | "denied";
+        ActionEnum: "list" | "search" | "detail" | "resume" | "broadcast" | "denied";
         /**
          * @description * `name` - name
          *     * `email` - email
@@ -1879,6 +2048,44 @@ export interface components {
          * @enum {string}
          */
         AssessmentKindEnum: "technical" | "aptitude" | "communication";
+        /**
+         * @description * `all` - All candidates in my access
+         *     * `shortlisted` - Shortlisted candidates only
+         * @enum {string}
+         */
+        AudienceEnum: "all" | "shortlisted";
+        Broadcast: {
+            readonly id: number;
+            audience?: components["schemas"]["AudienceEnum"];
+            title: string;
+            body: string;
+            recipient_count?: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            sent_at?: string | null;
+        };
+        BroadcastInput: {
+            /** @default all */
+            audience: components["schemas"]["AudienceEnum"];
+            title: string;
+            body: string;
+        };
+        BroadcastLog: {
+            readonly id: number;
+            /** Format: email */
+            readonly recruiter_email: string;
+            readonly drive_id: number;
+            readonly drive_label: string;
+            audience?: components["schemas"]["AudienceEnum"];
+            title: string;
+            body: string;
+            recipient_count?: number;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            sent_at?: string | null;
+        };
         Candidate: {
             id: number;
         };
@@ -1902,9 +2109,17 @@ export interface components {
          * @enum {string}
          */
         CandidateScopeEnum: "registered" | "shortlisted";
+        CertificateFile: {
+            name: string;
+            content_type: string;
+            size: number;
+            /** Format: date-time */
+            uploaded_at: string;
+        };
         CodingInput: {
             github_username?: string;
             leetcode_username?: string;
+            codeforces_username?: string;
         };
         Company: {
             readonly id: number;
@@ -2003,6 +2218,7 @@ export interface components {
             readonly is_institutional: boolean;
             readonly skill_tags: components["schemas"]["Tag"][];
             readonly verifications: components["schemas"]["Verification"][];
+            readonly certificate: components["schemas"]["CertificateFile"] | null;
         };
         EvidenceRule: {
             readonly id: number;
@@ -2106,8 +2322,11 @@ export interface components {
             weight: number;
             is_mandatory: boolean;
         };
+        /** @description Either pasted `text` (JSON) or an uploaded `file` (multipart: PDF, DOCX or TXT). */
         JDInput: {
-            text: string;
+            text?: string;
+            /** Format: uri */
+            file?: string | null;
         };
         /**
          * @description * `none` - No JD
@@ -2270,6 +2489,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Assessment"][];
+        };
+        PaginatedBroadcastLogList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["BroadcastLog"][];
         };
         PaginatedCompanyList: {
             /** @example 123 */
@@ -2705,7 +2939,7 @@ export interface components {
             weight_aptitude?: number;
             weight_communication?: number;
             weight_project_depth?: number;
-            /** @description Coding activity (GitHub/LeetCode ratings): unverified external evidence. */
+            /** @description Coding activity (GitHub/LeetCode/Codeforces ratings): unverified external evidence. */
             weight_coding?: number;
             /**
              * Format: decimal
@@ -2825,6 +3059,10 @@ export interface components {
             readonly name: string;
             /** Format: email */
             readonly email: string;
+            /**
+             * Registration number
+             * @description University registration number: exactly 8 digits.
+             */
             roll_number: string;
             readonly department: components["schemas"]["Department"];
             graduation_year: number;
@@ -3521,6 +3759,33 @@ export interface operations {
             };
         };
     };
+    drives_export_retrieve: {
+        parameters: {
+            query?: {
+                eligible?: boolean;
+                min_compatibility?: number;
+                q?: string;
+                registered?: boolean;
+            };
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this drive. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
     drives_jd_retrieve: {
         parameters: {
             query?: never;
@@ -3553,10 +3818,9 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["JDInput"];
-                "application/x-www-form-urlencoded": components["schemas"]["JDInput"];
                 "multipart/form-data": components["schemas"]["JDInput"];
             };
         };
@@ -3997,6 +4261,7 @@ export interface operations {
             query?: {
                 /** @description A page number within the paginated result set. */
                 page?: number;
+                source_type?: string;
                 status?: string;
                 student?: number;
             };
@@ -4026,8 +4291,8 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["EvidenceWrite"];
-                "application/x-www-form-urlencoded": components["schemas"]["EvidenceWrite"];
                 "multipart/form-data": components["schemas"]["EvidenceWrite"];
+                "application/x-www-form-urlencoded": components["schemas"]["EvidenceWrite"];
             };
         };
         responses: {
@@ -4097,8 +4362,8 @@ export interface operations {
         requestBody?: {
             content: {
                 "application/json": components["schemas"]["PatchedEvidenceUpdate"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedEvidenceUpdate"];
                 "multipart/form-data": components["schemas"]["PatchedEvidenceUpdate"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEvidenceUpdate"];
             };
         };
         responses: {
@@ -4109,6 +4374,80 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Evidence"];
                 };
+            };
+        };
+    };
+    evidence_certificate_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this evidence item. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    evidence_certificate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this evidence item. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Evidence"];
+                };
+            };
+        };
+    };
+    evidence_certificate_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A unique integer value identifying this evidence item. */
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -4130,6 +4469,29 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Evidence"];
+                };
+            };
+        };
+    };
+    evidence_export_retrieve: {
+        parameters: {
+            query?: {
+                source_type?: string;
+                status?: string;
+                student?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
                 };
             };
         };
@@ -4456,6 +4818,29 @@ export interface operations {
             };
         };
     };
+    recruiter_admin_broadcasts_list: {
+        parameters: {
+            query?: {
+                drive?: number;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBroadcastLogList"];
+                };
+            };
+        };
+    };
     recruiter_admin_fields_retrieve: {
         parameters: {
             query?: never;
@@ -4716,6 +5101,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecruiterDrive"][];
+                };
+            };
+        };
+    };
+    recruiter_broadcasts_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Broadcast"][];
+                };
+            };
+        };
+    };
+    recruiter_broadcasts_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                drive_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BroadcastInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["BroadcastInput"];
+                "multipart/form-data": components["schemas"]["BroadcastInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Broadcast"];
                 };
             };
         };
@@ -5761,6 +6194,29 @@ export interface operations {
             };
         };
     };
+    students_drives_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                student_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
     students_profile_retrieve: {
         parameters: {
             query?: never;
@@ -5924,6 +6380,32 @@ export interface operations {
             };
         };
     };
+    students_export_retrieve: {
+        parameters: {
+            query?: {
+                academic_verified?: boolean;
+                /** @description Readiness band: 80-100, 60-80, 40-60, 0-40 or none */
+                band?: string;
+                department?: string;
+                graduation_year?: number;
+                q?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
     students_faculty_list: {
         parameters: {
             query?: never;
@@ -5939,6 +6421,54 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Faculty"][];
+                };
+            };
+        };
+    };
+    students_import_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/octet-stream": string;
+                };
+            };
+        };
+    };
+    students_import_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file?: string;
+                    dry_run?: boolean;
+                };
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
         };
