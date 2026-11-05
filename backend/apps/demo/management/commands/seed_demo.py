@@ -1,8 +1,8 @@
 import secrets
 
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandError
 
-from apps.demo.seeding import seed_demo
+from apps.demo.seeding import grow_demo_cohort, seed_demo
 
 
 class Command(BaseCommand):
@@ -15,8 +15,23 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--password", help="Password for every demo account (default: random, printed once).")
         parser.add_argument("--students", type=int, default=40, help="Size of the synthetic cohort (default 40).")
+        parser.add_argument(
+            "--add-students",
+            type=int,
+            metavar="N",
+            help="Add N synthetic students to an existing demo, then re-run matching and batch readiness.",
+        )
 
-    def handle(self, *args, password=None, students=40, **options):
+    def handle(self, *args, password=None, students=40, add_students=None, **options):
+        if add_students is not None:
+            if add_students < 1:
+                raise CommandError("--add-students must be at least 1.")
+            try:
+                result = grow_demo_cohort(count=add_students)
+            except ValueError as exc:
+                raise CommandError(str(exc)) from exc
+            self.stdout.write(self.style.SUCCESS(f"Demo cohort grown: {result}"))
+            return
         password = password or secrets.token_urlsafe(12)
         result = seed_demo(password=password, students=students)
         self.stdout.write(self.style.SUCCESS(f"Demo ready: {result}"))
