@@ -20,9 +20,11 @@ The general release and rollback rules in [deployment.md](deployment.md) still a
 Check current prices on Render before choosing; the plan names in the file can be changed in the
 dashboard afterwards.
 
-**Not on Render:** resume and certificate files need S3-compatible storage. Cloudflare R2 has a
-free tier; AWS S3 also works. Create a **private** bucket named `resumes` and an access key
-limited to that bucket.
+**File storage:** resumes and certificates are stored in the PostgreSQL database
+(`FILE_STORAGE=database`, [ADR 0011](../adr/0011-file-storage-in-postgres.md)), so no bucket or
+outside account is needed. Each file is at most 5 MB and adds about its own size to the database;
+watch the database's disk usage in the Render dashboard and resize it, or switch to S3, if it
+fills up.
 
 ## First deploy
 
@@ -34,8 +36,6 @@ limited to that bucket.
    |---|---|---|
    | backend | `DJANGO_ALLOWED_HOSTS` | `placement-backend.onrender.com` (the backend's own host, no `https://`) |
    | backend | `CSRF_TRUSTED_ORIGINS` | `https://placement-frontend.onrender.com` (comma-separate a recruiter domain if you add one) |
-   | backend | `RESUME_S3_ENDPOINT_URL` | R2: `https://<account-id>.r2.cloudflarestorage.com` |
-   | backend | `RESUME_S3_ACCESS_KEY` / `RESUME_S3_SECRET_KEY` | the bucket key |
    | backend, worker | `GITHUB_TOKEN` | optional; leave empty |
    | frontend | `BACKEND_URL` | `https://placement-backend.onrender.com` |
 
@@ -66,7 +66,7 @@ limited to that bucket.
 - `https://placement-backend.onrender.com/ready` returns `{"status": "ok"}` (database and Redis).
 - Sign-in works through the frontend. If you get a CSRF error, `CSRF_TRUSTED_ORIGINS` does not
   match the frontend URL exactly (scheme included, no trailing slash).
-- Upload a resume and open it. Failures here are the S3 settings.
+- Upload a resume and open it in the viewer. The link stops working after 5 minutes (403).
 - Link a GitHub profile and confirm it syncs. That shows the worker is consuming tasks.
 - Open **Recruiter Access** and check that the IP recorded for your own sign-in is your real
   address. `NUM_PROXIES=2` assumes browser → Render → Next.js → Render → Django; if the address

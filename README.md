@@ -87,7 +87,7 @@ This starts seven services:
 | `worker`, `beat` | Celery |
 | `db` | localhost:5432 |
 | `redis` | localhost:6379 |
-| `objectstore` | localhost:8333 (SeaweedFS S3 gateway for resumes; set `RESUME_S3_ACCESS_KEY`/`RESUME_S3_SECRET_KEY` in `.env`) |
+| `objectstore` | localhost:8333 (SeaweedFS S3 gateway, used only with `FILE_STORAGE=s3`; by default resumes and certificates are stored in PostgreSQL, see [ADR 0011](docs/adr/0011-file-storage-in-postgres.md)) |
 
 The first build downloads dependencies and can take several minutes.
 

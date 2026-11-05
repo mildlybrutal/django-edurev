@@ -59,7 +59,7 @@ All 12 phases of the [implementation plan](implementation-plan.md) are implement
 | Certificates | Certification evidence can carry an uploaded file (PDF/image) in the same private storage, checked for size, extension and magic bytes; viewed through short-lived signed links |
 | Excel import/export | Placement cell and faculty can export staff lists to `.xlsx` (formula-injection safe) and bulk-import students from an ERP/SIS sheet, validated all-or-nothing. **No export exists on the recruiter portal** |
 | Recruiter broadcasts | A recruiter with an active grant can send an in-app announcement to the candidates inside that grant (all, or shortlisted only), delivered by a Celery task; every broadcast is listed for the placement cell |
-| Resumes | PDF upload to S3-compatible storage (SeaweedFS in compose), private bucket, 5-minute signed view links, staff views audited, recruiter release by grant |
+| Resumes | PDF upload, stored in PostgreSQL by default or in S3-compatible storage with `FILE_STORAGE=s3` ([ADR 0011](adr/0011-file-storage-in-postgres.md)), 5-minute signed view links, staff views audited, recruiter release by grant |
 | Demo and tooling | Synthetic demo seed; 5,000-student load generator; CI with e2e |
 
 Design choices are documented in [scoring-policy.md](scoring-policy.md), [data-release-policy.md](data-release-policy.md), [permissions-matrix.md](permissions-matrix.md) and [adr/](adr/).
@@ -71,7 +71,7 @@ Design choices are documented in [scoring-policy.md](scoring-policy.md), [data-r
 | CI on GitHub | Runs on every push and pull request. The first run (2026-10-31) failed on a gitleaks false positive (test fixture passwords) and stale generated API types; both fixed 2026-11-06 |
 | Deployment | No staging or production deployment. [Deployment runbook](runbooks/deployment.md) and a Render Blueprint (`render.yaml`, [render.md](runbooks/render.md)) written but not exercised. [Backup/restore](runbooks/backup-restore.md) verified locally only |
 | Recorded handover walkthrough | Not recorded (CES §1.6) |
-| File uploads | Resumes and certification files upload to S3-compatible storage (size, extension and magic bytes are checked). **No malware scanning.** JD files (PDF/DOCX/TXT) are read for their text and not stored; there is no OCR for scanned PDFs. Other evidence is still links |
+| File uploads | Resumes and certification files are stored in PostgreSQL (or S3) (size, extension and magic bytes are checked). **No malware scanning.** JD files (PDF/DOCX/TXT) are read for their text and not stored; there is no OCR for scanned PDFs. Other evidence is still links |
 | Live external-platform APIs | GitHub, LeetCode and Codeforces are fetched (LeetCode via an unofficial endpoint that may break). CodeChef has no official API and stays manual evidence. LinkedIn is stored as a link only (no API) |
 | SSO, SMS, ERP/LMS integrations | Not implemented (email channel uses Django's mail backend) |
 | Field-level encryption, DPDP data-subject endpoints | Not implemented |

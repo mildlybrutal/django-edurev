@@ -20,6 +20,7 @@ api_v1 = [
     path("notifications/", include("apps.notifications.api.urls")),
     path("recruiter/", include("apps.recruiter.api.urls")),
     path("recruiter-admin/", include("apps.recruiter.api.admin_urls")),
+    path("files/<str:token>/", core_views.StoredFileView.as_view(), name="stored-file"),
 ]
 
 urlpatterns = [

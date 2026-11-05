@@ -8,6 +8,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # backend/
 REPO_ROOT = BASE_DIR.parent
@@ -109,7 +110,11 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# Resumes live in S3-compatible object storage (CES §1.1), never on the app server's disk.
+# Uploaded files (resumes, certificates) never live on the app server's disk (CES §1.1). They are
+# stored in PostgreSQL by default (ADR 0011), or in S3-compatible object storage with FILE_STORAGE=s3.
+FILE_STORAGE = env("FILE_STORAGE", default="database")
+if FILE_STORAGE not in ("database", "s3"):
+    raise ImproperlyConfigured('FILE_STORAGE must be "database" or "s3".')
 RESUME_S3_PUBLIC_URL = env("RESUME_S3_PUBLIC_URL", default="")
 RESUME_MAX_BYTES = env.int("RESUME_MAX_BYTES", default=5 * 1024 * 1024)
 RESUME_URL_EXPIRY_SECONDS = env.int("RESUME_URL_EXPIRY_SECONDS", default=300)
@@ -117,7 +122,9 @@ CERTIFICATE_MAX_BYTES = env.int("CERTIFICATE_MAX_BYTES", default=5 * 1024 * 1024
 STORAGES = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
-    "resumes": {
+    "resumes": {"BACKEND": "apps.core.file_storage.DatabaseStorage"}
+    if FILE_STORAGE == "database"
+    else {
         "BACKEND": "storages.backends.s3.S3Storage",
         "OPTIONS": {
             "bucket_name": env("RESUME_S3_BUCKET", default="resumes"),
@@ -156,6 +163,8 @@ REST_FRAMEWORK = {
         # Recruiter portal has its own, stricter scopes (P06 §7).
         "recruiter": env("THROTTLE_RECRUITER", default="30/min"),
         "recruiter_login": env("THROTTLE_RECRUITER_LOGIN", default="5/min"),
+        # Opening a signed file link (resume or certificate viewer), per IP.
+        "file_link": env("THROTTLE_FILE_LINK", default="60/min"),
     },
     "NUM_PROXIES": env.int("NUM_PROXIES", default=0),
 }
