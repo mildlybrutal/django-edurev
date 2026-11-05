@@ -30,3 +30,13 @@ def test_ready_503_when_database_unreachable(client):
 
 def test_health_rejects_non_get(client):
     assert client.post("/health").status_code == 405
+
+
+def test_health_answers_platform_checks_on_any_host_without_redirect(client, settings):
+    """Render probes over plain HTTP with an internal Host; prod settings must not 400 or redirect it."""
+    settings.ALLOWED_HOSTS = ["placement.example.edu"]
+    settings.SECURE_SSL_REDIRECT = True
+    response = client.get("/health", HTTP_HOST="10.0.0.12:8000")
+    assert response.status_code == 200 and response.json() == {"status": "ok"}
+    # Everything else still gets host validation.
+    assert client.get("/ready", HTTP_HOST="10.0.0.12:8000").status_code == 400
