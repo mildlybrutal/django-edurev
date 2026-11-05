@@ -258,7 +258,8 @@ export function CandidateSearch({ driveId }: { driveId: number }) {
             </QueryState>
           </Card>
           {selected && <CandidateProfile driveId={driveId} id={selected} />}
-          <Broadcasts driveId={driveId} />
+          {/* Only once the drive loaded: a drive without a grant shows a single "Not found". */}
+          {results.isSuccess && <Broadcasts driveId={driveId} />}
         </div>
       </div>
     </>
