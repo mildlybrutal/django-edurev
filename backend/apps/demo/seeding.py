@@ -17,7 +17,7 @@ from apps.assessments import services as assessment_services
 from apps.assessments.models import Rubric, RubricCriterion
 from apps.core.models import Institution
 from apps.drives import services as drive_services
-from apps.drives.models import Company, DriveStatus, RegistrationStatus, RuleType
+from apps.drives.models import Company, Drive, DriveStatus, RegistrationStatus, RuleType
 from apps.evidence import services as evidence_services
 from apps.evidence.models import EvidenceItem, EvidenceSkillTag, SourceType, VerificationStatus
 from apps.matching.services import run_drive_matching
@@ -202,34 +202,12 @@ def seed_demo(*, password, students=40, seed=42):
         }
 
     # The cohort. The first student is the demo login with a good-but-incomplete backend profile.
+    mentors = (staff[Role.FACULTY], faculty2)
     cohort = []
     for i in range(students):
-        if i == 0:
-            email, first, last = "student@demo.example.test", "Sana", "Student"
-            dept, cgpa, backlogs, profile, strength = "CSE", Decimal("8.20"), 0, "backend", 0.55
-        else:
-            first, last = rng.choice(FIRST_NAMES), rng.choice(LAST_NAMES)
-            email = f"student{i:03d}@demo.example.test"
-            dept = rng.choices(["CSE", "IT", "ECE", "ME"], weights=[45, 30, 15, 10])[0]
-            cgpa = Decimal(str(round(rng.uniform(5.6, 9.7), 2)))
-            backlogs = 0 if rng.random() < 0.85 else rng.randint(1, 3)
-            profile = rng.choice(list(PROFILES))
-            strength = rng.random()
-        user, was_created = _user(email, first, last, Role.STUDENT, institution, password)
+        student, was_created = _cohort_student(i, rng, institution, depts, mentors, rubrics, password)
         if was_created and i == 0:
-            created.append(email)
-        student = StudentProfile.objects.create(
-            institution=institution,
-            user=user,
-            roll_number=f"1230{i + 1:04d}",
-            department=depts[dept],
-            graduation_year=2027 if rng.random() < 0.9 or i == 0 else 2026,
-            cgpa=cgpa,
-            active_backlogs=backlogs,
-            mentor=staff[Role.FACULTY] if i % 2 == 0 else faculty2,
-            headline=f"{profile.title()} enthusiast" if i == 0 else "",
-        )
-        _populate_student(student, rng, institution, rubrics, student.mentor, profile=profile, strength=strength)
+            created.append(student.user.email)
         cohort.append(student)
 
     officer, head = staff[Role.PLACEMENT_OFFICER], staff[Role.PLACEMENT_HEAD]
@@ -346,6 +324,90 @@ def seed_demo(*, password, students=40, seed=42):
         "created_accounts": created,
         "students": len(cohort),
         "drives": 4,
+        "average_readiness": summary["average_readiness"],
+    }
+
+
+def _cohort_student(i, rng, institution, depts, mentors, rubrics, password):
+    """Student number `i` of the demo cohort (0 is the demo login), with evidence and assessments."""
+    if i == 0:
+        email, first, last = "student@demo.example.test", "Sana", "Student"
+        dept, cgpa, backlogs, profile, strength = "CSE", Decimal("8.20"), 0, "backend", 0.55
+    else:
+        first, last = rng.choice(FIRST_NAMES), rng.choice(LAST_NAMES)
+        email = f"student{i:03d}@demo.example.test"
+        dept = rng.choices(["CSE", "IT", "ECE", "ME"], weights=[45, 30, 15, 10])[0]
+        cgpa = Decimal(str(round(rng.uniform(5.6, 9.7), 2)))
+        backlogs = 0 if rng.random() < 0.85 else rng.randint(1, 3)
+        profile = rng.choice(list(PROFILES))
+        strength = rng.random()
+    user, was_created = _user(email, first, last, Role.STUDENT, institution, password)
+    student = StudentProfile.objects.create(
+        institution=institution,
+        user=user,
+        roll_number=f"1230{i + 1:04d}",
+        department=depts[dept],
+        graduation_year=2027 if rng.random() < 0.9 or i == 0 else 2026,
+        cgpa=cgpa,
+        active_backlogs=backlogs,
+        mentor=mentors[i % 2],
+        headline=f"{profile.title()} enthusiast" if i == 0 else "",
+    )
+    _populate_student(student, rng, institution, rubrics, student.mentor, profile=profile, strength=strength)
+    return student, was_created
+
+
+MAX_DEMO_STUDENTS = 2000  # emails are student###, roll numbers 1230####; also keeps seeding quick
+
+
+@transaction.atomic
+def grow_demo_cohort(*, count, seed=None):
+    """Add `count` synthetic students to an existing demo, then refresh matching, open-drive
+    registrations and batch readiness so dashboards and analytics include them. The new accounts
+    have no usable password: only the staff accounts and student@demo.example.test sign in."""
+    institution = Institution.objects.filter(code=DEMO["code"]).first()
+    if institution is None or not StudentProfile.objects.filter(institution=institution).exists():
+        raise ValueError("No demo cohort yet. Run seed_demo first (it accepts --students for the initial size).")
+    existing = StudentProfile.objects.filter(institution=institution).count()
+    if existing + count > MAX_DEMO_STUDENTS:
+        raise ValueError(f"The demo is capped at {MAX_DEMO_STUDENTS} students ({existing} present).")
+    rng = random.Random(seed if seed is not None else existing)
+    User = get_user_model()
+    depts = {d.code: d for d in Department.objects.filter(institution=institution)}
+    mentors = (
+        User.objects.get(email="faculty@demo.example.test"),
+        User.objects.get(email="faculty2@demo.example.test"),
+    )
+    rubrics = _rubrics(institution)
+    taken = set(StudentProfile.objects.filter(institution=institution).values_list("roll_number", flat=True))
+    new, i = [], 1
+    while len(new) < count:
+        if f"1230{i + 1:04d}" not in taken:
+            new.append(_cohort_student(i, rng, institution, depts, mentors, rubrics, None)[0])
+        i += 1
+
+    build_claims(new)
+    drives = list(
+        Drive.objects.filter(
+            institution=institution,
+            status__in=[DriveStatus.PUBLISHED, DriveStatus.REGISTRATION_CLOSED, DriveStatus.SHORTLISTING],
+        )
+    )
+    for drive in drives:
+        run_drive_matching(drive)
+        if not drive_services.registration_open(drive):
+            continue
+        eligible = set(
+            drive.eligibility_results.filter(student__in=new, is_eligible=True).values_list("student_id", flat=True)
+        )
+        for student in new:
+            if student.pk in eligible and rng.random() < 0.5:
+                drive_services.register(drive, student)
+    summary = run_batch_readiness(institution.id, nudge_below=None)
+    return {
+        "added": len(new),
+        "students": existing + len(new),
+        "drives_rematched": len(drives),
         "average_readiness": summary["average_readiness"],
     }
 

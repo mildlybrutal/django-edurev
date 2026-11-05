@@ -182,7 +182,8 @@ docker compose exec backend python manage.py run_batch_readiness --institution l
 
 | Command | Purpose |
 |---|---|
-| `seed_demo [--password X] [--students N]` | Synthetic demo (see above) |
+| `seed_demo [--password X] [--students N]` | Synthetic demo (see above). `--students` sets the size of a new demo (default 40) |
+| `seed_demo --add-students N` | Grow an existing demo by N synthetic students (up to 2,000 in total), then re-run matching and batch readiness. Added students have no login |
 | `seed_taxonomy <institution_code>` | Starter taxonomy (software development, data, testing roles); never overwrites edits |
 | `seed_synthetic_cohort --institution CODE --students N` | Bulk synthetic students for load testing |
 | `run_batch_readiness --institution CODE` | Queue the batch job on the worker and report its duration |

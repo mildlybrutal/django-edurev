@@ -33,3 +33,33 @@ def test_synthetic_cohort_bulk_creates_students():
     assert synthetic_cohort(institution, 25, chunk=10) == 25
     assert StudentProfile.objects.filter(institution=institution).count() == 25
     assert synthetic_cohort(institution, 5) == 5  # appends, never collides
+
+
+def test_grow_demo_cohort_adds_matched_students_without_logins():
+    from apps.demo.seeding import grow_demo_cohort
+    from apps.readiness.models import ReadinessSnapshot
+
+    seed_demo(password="Demo-Pass-2026", students=6)
+    institution = Institution.objects.get(code="demo")
+    result = grow_demo_cohort(count=10)
+    assert (result["added"], result["students"]) == (10, 16)
+    students = StudentProfile.objects.filter(institution=institution)
+    assert students.count() == 16
+    assert len(set(students.values_list("roll_number", flat=True))) == 16
+    backend = Drive.objects.get(institution=institution, role_title="Backend Engineer")
+    assert MatchResult.objects.filter(drive=backend).count() == 16  # new students are matched
+    new = students.order_by("-pk")[:10]
+    assert all(not s.user.has_usable_password() for s in new)  # no extra demo logins
+    assert ReadinessSnapshot.objects.filter(student__in=new, drive__isnull=True).count() >= 10
+    grow_demo_cohort(count=3)  # repeatable, never collides
+    assert students.count() == 19
+
+
+def test_grow_demo_cohort_needs_an_existing_demo_and_respects_the_cap(settings):
+    from apps.demo import seeding
+
+    with pytest.raises(ValueError, match="Run seed_demo first"):
+        seeding.grow_demo_cohort(count=5)
+    seed_demo(password="Demo-Pass-2026", students=3)
+    with pytest.raises(ValueError, match="capped"):
+        seeding.grow_demo_cohort(count=seeding.MAX_DEMO_STUDENTS)
