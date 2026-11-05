@@ -18,7 +18,7 @@ RELEASABLE_FIELDS = {
     "skills": "Skill profile (levels and verification status)",
     "evidence": "Evidence titles, types and verification status (no files or links)",
     "registration_status": "Registration / shortlist status",
-    "coding_activity": "Coding-activity rating (GitHub / LeetCode, unverified)",
+    "coding_activity": "Coding-activity rating (GitHub / LeetCode / Codeforces, unverified)",
     "resume": "Resume (PDF, short-lived view link; each view is logged)",
 }
 DEFAULT_FIELDS = ["name", "department", "graduation_year", "compatibility", "skills", "registration_status"]

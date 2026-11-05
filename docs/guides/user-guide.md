@@ -13,7 +13,7 @@ After you sign up, a pop-up asks for your GitHub and LeetCode usernames, your Li
    - Coding-platform activity alone can't establish more than *Beginner*.
    - Assessments and mock interviews recorded by staff appear here automatically as verified.
 2. **My Profile:** your academic record (read-only), profile-completion checklist, and skill profile. Select a skill to see exactly which evidence supports it.
-   - **Coding activity:** your GitHub and LeetCode ratings (0–100), synced from public data. Select *How this is rated* to see each part of a rating. This is the fifth readiness dimension, and it counts as unverified evidence. LeetCode data comes from an unofficial source.
+   - **Coding activity:** your GitHub, LeetCode and Codeforces ratings (0–100), synced from public data. Select *How this is rated* to see each part of a rating. This is the fifth readiness dimension, and it counts as unverified evidence. LeetCode data comes from an unofficial source.
    - **Resume:** upload, replace, view or delete it. Your mentor and the placement cell can view it. A recruiter sees it only if the placement cell releases it for their drive.
 3. **Placement Drives:** for each drive you see two separate things:
    - **Eligibility:** the company's hard criteria. Each one is ticked or crossed with the reason.

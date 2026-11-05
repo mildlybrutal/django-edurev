@@ -18,19 +18,30 @@ class CodingError(ValueError):
     pass
 
 
+# platform -> (username pattern, fetch function name in clients, rating function name in rating)
+PLATFORMS = {
+    Platform.GITHUB: (clients.GITHUB_USERNAME, "fetch_github", "github_rating"),
+    Platform.LEETCODE: (clients.LEETCODE_USERNAME, "fetch_leetcode", "leetcode_rating"),
+    Platform.CODEFORCES: (clients.CODEFORCES_HANDLE, "fetch_codeforces", "codeforces_rating"),
+}
+
+
 def validate_username(platform, username):
-    pattern = clients.GITHUB_USERNAME if platform == Platform.GITHUB else clients.LEETCODE_USERNAME
-    if not pattern.match(username):
+    if not PLATFORMS[platform][0].match(username):
         raise CodingError(f"That doesn't look like a valid {Platform(platform).label} username.")
     return username
 
 
 @transaction.atomic
-def set_profiles(student, *, github=None, leetcode=None):
+def set_profiles(student, *, github=None, leetcode=None, codeforces=None):
     """Create/replace/remove the student's coding handles; changed handles are re-synced.
     Pass "" to remove a platform, None to leave it unchanged."""
     changed = []
-    for platform, username in ((Platform.GITHUB, github), (Platform.LEETCODE, leetcode)):
+    for platform, username in (
+        (Platform.GITHUB, github),
+        (Platform.LEETCODE, leetcode),
+        (Platform.CODEFORCES, codeforces),
+    ):
         if username is None:
             continue
         username = username.strip().lstrip("@")
@@ -77,12 +88,9 @@ def request_refresh(student):
 
 def sync(profile):
     """Fetch, rate, and record the profile as unverified external evidence."""
+    _, fetch_name, rating_name = PLATFORMS[profile.platform]
     try:
-        stats = (
-            clients.fetch_github(profile.username)
-            if profile.platform == Platform.GITHUB
-            else clients.fetch_leetcode(profile.username)
-        )
+        stats = getattr(clients, fetch_name)(profile.username)
     except clients.ProfileNotFound:
         profile.status, profile.error = SyncStatus.NOT_FOUND, "No public profile with that username."
         profile.score = None
@@ -97,9 +105,7 @@ def sync(profile):
         profile.save(update_fields=["status", "error", "last_synced_at", "updated_at"])
         return profile
 
-    score, explanation = (rating.github_rating if profile.platform == Platform.GITHUB else rating.leetcode_rating)(
-        stats
-    )
+    score, explanation = getattr(rating, rating_name)(stats)
     profile.stats, profile.score, profile.explanation = stats, score, explanation
     profile.status, profile.error, profile.last_synced_at = SyncStatus.OK, "", timezone.now()
     profile.save()
@@ -109,7 +115,7 @@ def sync(profile):
 
 def _tags(profile):
     student = profile.student
-    if profile.platform == Platform.LEETCODE:
+    if profile.platform in (Platform.LEETCODE, Platform.CODEFORCES):
         dsa = resolve_skill(student.institution, "Data Structures & Algorithms")
         return [(dsa, rating.leetcode_dsa_level(profile.stats))] if dsa else []
     tags = []
@@ -126,13 +132,7 @@ def _record_evidence(profile):
     pending/verified if the student asked their mentor), so evidence rules cap it like any other
     unverified external activity."""
     stats = profile.stats
-    title = (
-        f"GitHub: {stats.get('original_repos', 0)} original repos, "
-        f"{stats.get('recent_push_events', 0)} pushes in 90 days"
-        if profile.platform == Platform.GITHUB
-        else f"LeetCode: {stats.get('solved_total', 0)} problems solved"
-        + (f", contest rating {stats['contest_rating']}" if stats.get("contest_rating") else "")
-    )
+    title = _evidence_title(profile.platform, stats)
     data = {"synced": True, "rating": float(profile.score), **{k: v for k, v in stats.items() if k != "top_repos"}}
     item = profile.evidence
     if item is None or not EvidenceItem.objects.filter(pk=item.pk).exists():
@@ -154,6 +154,21 @@ def _record_evidence(profile):
         source_url=stats.get("profile_url", item.source_url),
         extracted_data=data,
         tags=_tags(profile),
+    )
+
+
+def _evidence_title(platform, stats):
+    if platform == Platform.GITHUB:
+        return (
+            f"GitHub: {stats.get('original_repos', 0)} original repos, "
+            f"{stats.get('recent_push_events', 0)} pushes in 90 days"
+        )
+    if platform == Platform.CODEFORCES:
+        return f"Codeforces: {stats.get('solved_total', 0)} problems solved" + (
+            f", rating {stats['rating']}" if stats.get("rating") else ""
+        )
+    return f"LeetCode: {stats.get('solved_total', 0)} problems solved" + (
+        f", contest rating {stats['contest_rating']}" if stats.get("contest_rating") else ""
     )
 
 

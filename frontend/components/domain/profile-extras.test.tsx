@@ -13,6 +13,8 @@ describe("handleFrom", () => {
     expect(handleFrom("https://leetcode.com/u/ada_codes/", "leetcode.com")).toBe("ada_codes");
     expect(handleFrom("https://leetcode.com/ada_codes", "leetcode.com")).toBe("ada_codes");
     expect(handleFrom("  ada  ", "leetcode.com")).toBe("ada");
+    expect(handleFrom("https://codeforces.com/profile/tourist", "codeforces.com")).toBe("tourist");
+    expect(handleFrom("codeforces.com/profile/ada_cf", "codeforces.com")).toBe("ada_cf");
   });
 });
 

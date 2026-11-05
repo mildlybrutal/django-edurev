@@ -63,7 +63,7 @@ Read: all internal roles. Write: A. All writes audited.
 | GET | `faculty/` | O/H/A | Faculty list (for mentor assignment) |
 | GET/POST | `me/onboarding/` | student | Whether the first-run profile pop-up should show; POST marks it done |
 | GET | `{id\|me}/coding/` | self, mentor, O/H/A | Coding-activity score and per-platform ratings with explanation |
-| POST | `me/coding/` | self | Set or unlink `github_username` / `leetcode_username`; queues a sync |
+| POST | `me/coding/` | self | Set or unlink `github_username` / `leetcode_username` / `codeforces_username`; queues a sync |
 | POST | `me/coding/refresh/` | self | Re-sync (at most every 30 minutes); 202 |
 | GET | `{id\|me}/resume/` | self, mentor, O/H/A | Current resume: name, size and a 5-minute signed view link. Staff views are audited |
 | POST | `me/resume/` | self | Upload a PDF (multipart `file`, ≤5 MB, magic bytes checked); keeps the last 3 versions |

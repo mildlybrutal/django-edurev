@@ -2119,6 +2119,7 @@ export interface components {
         CodingInput: {
             github_username?: string;
             leetcode_username?: string;
+            codeforces_username?: string;
         };
         Company: {
             readonly id: number;
@@ -2935,7 +2936,7 @@ export interface components {
             weight_aptitude?: number;
             weight_communication?: number;
             weight_project_depth?: number;
-            /** @description Coding activity (GitHub/LeetCode ratings): unverified external evidence. */
+            /** @description Coding activity (GitHub/LeetCode/Codeforces ratings): unverified external evidence. */
             weight_coding?: number;
             /**
              * Format: decimal

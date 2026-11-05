@@ -55,7 +55,7 @@ All 12 phases of the [implementation plan](implementation-plan.md) are implement
 | M10 | Reports, batch job, recruiter portal |
 | Frontend | Student, faculty, placement and recruiter portals. "Module Booklets" design system (DESIGN.md): cobalt rail, cluster-coloured numbered module spines, violet next step, light/dark/system theme, toasts, micro-interactions with a reduced-motion path |
 | Self sign-up & onboarding | Public student sign-up (per-institution switch, optional email domain; academics self-declared until the cell confirms them); first-run pop-up for GitHub, LeetCode, LinkedIn and resume |
-| Coding activity | GitHub (official API) and LeetCode (unofficial GraphQL) sync on Celery, explainable 0–100 ratings, unverified evidence items, fifth readiness dimension (weight 10) |
+| Coding activity | GitHub (official API), LeetCode (unofficial GraphQL) and Codeforces (official API) sync on Celery, explainable 0–100 ratings, unverified evidence items, fifth readiness dimension (weight 10) |
 | Certificates | Certification evidence can carry an uploaded file (PDF/image) in the same private storage, checked for size, extension and magic bytes; viewed through short-lived signed links |
 | Excel import/export | Placement cell and faculty can export staff lists to `.xlsx` (formula-injection safe) and bulk-import students from an ERP/SIS sheet, validated all-or-nothing. **No export exists on the recruiter portal** |
 | Recruiter broadcasts | A recruiter with an active grant can send an in-app announcement to the candidates inside that grant (all, or shortlisted only), delivered by a Celery task; every broadcast is listed for the placement cell |
@@ -72,7 +72,7 @@ Design choices are documented in [scoring-policy.md](scoring-policy.md), [data-r
 | Deployment | No staging or production deployment. [Deployment runbook](runbooks/deployment.md) written but not exercised. [Backup/restore](runbooks/backup-restore.md) verified locally only |
 | Recorded handover walkthrough | Not recorded (CES §1.6) |
 | File uploads | Resumes and certification files upload to S3-compatible storage (size, extension and magic bytes are checked). **No malware scanning.** Other evidence and JDs are still links/pasted text |
-| Live external-platform APIs | GitHub and LeetCode are fetched (LeetCode via an unofficial endpoint that may break). CodeChef and Codeforces are still manual evidence. LinkedIn is stored as a link only (no API) |
+| Live external-platform APIs | GitHub, LeetCode and Codeforces are fetched (LeetCode via an unofficial endpoint that may break). CodeChef has no official API and stays manual evidence. LinkedIn is stored as a link only (no API) |
 | SSO, SMS, ERP/LMS integrations | Not implemented (email channel uses Django's mail backend) |
 | Field-level encryption, DPDP data-subject endpoints | Not implemented |
 | Load test (Locust/k6), OWASP ZAP baseline | Not run (only the batch-job benchmark was measured) |

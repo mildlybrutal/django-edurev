@@ -1,13 +1,16 @@
-"""Fetch public coding activity. Only two fixed hosts are ever contacted (no user-supplied URLs,
+"""Fetch public coding activity. Only three fixed hosts are ever contacted (no user-supplied URLs,
 so no SSRF surface), with short timeouts. Standard library only.
 
 - GitHub: the official REST API (unauthenticated 60 requests/hour; GITHUB_TOKEN raises the limit).
 - LeetCode: its public GraphQL endpoint. This is **unofficial**: it may change or rate-limit without
   notice, and the UI labels LeetCode figures as coming from an unofficial source.
+- Codeforces: its official public API (https://codeforces.com/apiHelp). It allows roughly one call
+  every two seconds per client, so the calls for one profile are spaced out.
 """
 
 import json
 import re
+import time
 import urllib.error
 import urllib.request
 from datetime import UTC, datetime, timedelta
@@ -16,11 +19,14 @@ from django.conf import settings
 
 GITHUB_API = "https://api.github.com"
 LEETCODE_GRAPHQL = "https://leetcode.com/graphql"
+CODEFORCES_API = "https://codeforces.com/api"
+CODEFORCES_CALL_GAP = 2.1  # seconds between calls (the API's published limit is 1 call / 2 s)
 TIMEOUT = 10
 USER_AGENT = "placement-readiness/1.0 (+institutional placement platform)"
 
 GITHUB_USERNAME = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$")
 LEETCODE_USERNAME = re.compile(r"^[A-Za-z0-9_-]{1,30}$")
+CODEFORCES_HANDLE = re.compile(r"^[A-Za-z0-9_.-]{3,24}$")
 
 
 class ProfileNotFound(Exception):  # noqa: N818
@@ -140,6 +146,60 @@ def fetch_leetcode(username):
         "contests_attended": contest.get("attendedContestsCount") or 0,
         "contest_top_percentage": contest.get("topPercentage"),
         "source": "leetcode.com public GraphQL (unofficial)",
+    }
+
+
+def _codeforces(method, **params):
+    """Call one Codeforces API method. It answers HTTP 400 with status FAILED for an unknown handle."""
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    try:
+        data = _request(f"{CODEFORCES_API}/{method}?{query}")
+    except FetchError as exc:
+        if "HTTP 400" in str(exc):
+            raise ProfileNotFound from exc
+        raise
+    if data.get("status") != "OK":
+        comment = str(data.get("comment", ""))
+        if "not found" in comment:
+            raise ProfileNotFound
+        raise FetchError(comment[:200] or "Codeforces API error")
+    return data["result"]
+
+
+def fetch_codeforces(handle, pause=time.sleep):
+    """Rating, rank, contest count and distinct solved problems (by problem rating) from the
+    official Codeforces API."""
+    if not CODEFORCES_HANDLE.match(handle):
+        raise ProfileNotFound
+    users = _codeforces("user.info", handles=handle)
+    if not users:
+        raise ProfileNotFound
+    user = users[0]
+    pause(CODEFORCES_CALL_GAP)
+    contests = _codeforces("user.rating", handle=handle)
+    pause(CODEFORCES_CALL_GAP)
+    submissions = _codeforces("user.status", handle=handle)
+    solved = {}
+    for sub in submissions:
+        if sub.get("verdict") != "OK":
+            continue
+        problem = sub.get("problem") or {}
+        key = (problem.get("contestId"), problem.get("problemsetName"), problem.get("index"), problem.get("name"))
+        solved[key] = problem.get("rating")
+    rated = [r for r in solved.values() if r]
+    real_handle = user.get("handle", handle)
+    return {
+        "username": real_handle,
+        "profile_url": f"https://codeforces.com/profile/{real_handle}",
+        "rating": user.get("rating"),
+        "max_rating": user.get("maxRating"),
+        "rank": user.get("rank"),
+        "max_rank": user.get("maxRank"),
+        "contests_attended": len(contests),
+        "solved_total": len(solved),
+        "solved_1600_plus": sum(1 for r in rated if r >= 1600),
+        "median_solved_rating": sorted(rated)[len(rated) // 2] if rated else None,
+        "source": "codeforces.com official API",
     }
 
 

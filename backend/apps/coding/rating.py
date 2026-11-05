@@ -60,9 +60,33 @@ def leetcode_rating(stats):
     }
 
 
+def codeforces_rating(stats):
+    """Distinct problems solved, harder problems solved, and contest rating when the user is rated."""
+    rating = stats.get("rating")
+    solved = _component("solved", "Distinct problems solved", stats.get("solved_total", 0), 300, 0.45)
+    hard = _component("hard", "Problems rated 1600+ solved", stats.get("solved_1600_plus", 0), 50, 0.20)
+    if rating:
+        parts = [
+            solved,
+            hard,
+            _component("contest", "Contest rating above 800", max(0, rating - 800), 1200, 0.35, display=rating),
+        ]
+    else:
+        solved = _component("solved", "Distinct problems solved", stats.get("solved_total", 0), 300, 0.70)
+        hard = _component("hard", "Problems rated 1600+ solved", stats.get("solved_1600_plus", 0), 50, 0.30)
+        parts = [solved, hard]
+    score = round(sum(p["points"] for p in parts), 2)
+    return score, {
+        "summary": "Codeforces problem solving (official public API): distinct problems solved, problems rated "
+        "1600 or more" + (", and contest rating." if rating else "; not yet rated in contests."),
+        "components": parts,
+    }
+
+
 def leetcode_dsa_level(stats):
-    """Level a student may *claim* for DSA from LeetCode volume. Evidence rules still cap unverified
-    external evidence (Beginner by default), so this never becomes expertise without verification."""
+    """Level a student may *claim* for DSA from a solved-problem count (LeetCode or Codeforces).
+    Evidence rules still cap unverified external evidence (Beginner by default), so this never
+    becomes expertise without verification."""
     solved = stats.get("solved_total", 0)
     if solved >= 500:
         return Level.EXPERT

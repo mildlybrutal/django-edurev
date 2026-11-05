@@ -143,7 +143,7 @@ function EditLinks({ student }: { student: SkillProfile["student"] }) {
             onChange={(e) => setHeadline(e.target.value)}
             placeholder="e.g. Backend developer interested in fintech"
           />
-          <p className="-mt-1 text-xs text-muted">GitHub and LeetCode are linked under Coding activity.</p>
+          <p className="-mt-1 text-xs text-muted">GitHub, LeetCode and Codeforces are linked under Coding activity.</p>
           <TextField
             label="LinkedIn profile URL"
             placeholder="https://www.linkedin.com/in/your-name"

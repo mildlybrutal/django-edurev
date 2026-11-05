@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { del, get, patch, post, upload } from "./request";
 
-/* Coding activity (GitHub / LeetCode ratings) and resumes. Payloads are computed objects, so
+/* Coding activity (GitHub / LeetCode / Codeforces ratings) and resumes. Payloads are computed objects, so
  * they are typed here rather than generated. */
 
 export type RatingComponent = {
@@ -17,7 +17,7 @@ export type RatingComponent = {
 
 export type CodingProfile = {
   id: number;
-  platform: "github" | "leetcode";
+  platform: "github" | "leetcode" | "codeforces";
   platform_label: string;
   username: string;
   status: "pending" | "ok" | "not_found" | "error";
@@ -43,21 +43,26 @@ export type Onboarding = {
   required: boolean;
   github?: boolean;
   leetcode?: boolean;
+  codeforces?: boolean;
   linkedin?: boolean;
   resume?: boolean;
 };
 
 export const GITHUB_USERNAME = /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/;
 export const LEETCODE_USERNAME = /^[A-Za-z0-9_-]{1,30}$/;
+export const CODEFORCES_HANDLE = /^[A-Za-z0-9_.-]{3,24}$/;
 
 /** Accept a pasted profile URL or @handle and reduce it to the username. */
-export function handleFrom(value: string, host: "github.com" | "leetcode.com"): string {
+export function handleFrom(value: string, host: "github.com" | "leetcode.com" | "codeforces.com"): string {
   const v = value.trim().replace(/^@/, "");
   try {
     const url = new URL(v.includes("://") ? v : `https://${v}`);
     if (url.hostname.replace(/^www\./, "") === host) {
       const parts = url.pathname.split("/").filter(Boolean);
-      return (host === "leetcode.com" && (parts[0] === "u" || parts[0] === "profile") ? parts[1] : parts[0]) ?? "";
+      const nested =
+        (host === "leetcode.com" && (parts[0] === "u" || parts[0] === "profile")) ||
+        (host === "codeforces.com" && parts[0] === "profile");
+      return (nested ? parts[1] : parts[0]) ?? "";
     }
   } catch {
     // Not a URL: treat as a bare username.
@@ -111,10 +116,19 @@ export function useSaveCoding() {
   const refresh = useInvalidateProfile();
   return useMutation({
     meta: { toast: "Coding profiles saved", toastBody: "Ratings appear once each platform has synced." },
-    mutationFn: async ({ github, leetcode }: { github?: string; leetcode?: string }) => {
+    mutationFn: async ({
+      github,
+      leetcode,
+      codeforces,
+    }: {
+      github?: string;
+      leetcode?: string;
+      codeforces?: string;
+    }) => {
       const result = await post<CodingPayload>("/api/v1/students/me/coding/", {
         ...(github !== undefined && { github_username: github }),
         ...(leetcode !== undefined && { leetcode_username: leetcode }),
+        ...(codeforces !== undefined && { codeforces_username: codeforces }),
       });
       if (github !== undefined)
         await patch("/api/v1/students/me/", { github_url: github ? `https://github.com/${github}` : "" });

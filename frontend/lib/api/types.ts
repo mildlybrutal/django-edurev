@@ -7,7 +7,7 @@ export type Dimensions = {
   aptitude: number;
   communication: number;
   project_depth: number;
-  /** GitHub / LeetCode ratings; absent on snapshots computed before the dimension existed. */
+  /** GitHub / LeetCode / Codeforces ratings; absent on snapshots computed before the dimension existed. */
   coding_activity?: number;
 };
 

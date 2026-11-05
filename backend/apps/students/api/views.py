@@ -469,6 +469,7 @@ class OnboardingView(APIView):
                 "required": student.onboarding_completed_at is None,
                 "github": "github" in platforms,
                 "leetcode": "leetcode" in platforms,
+                "codeforces": "codeforces" in platforms,
                 "linkedin": bool(student.linkedin_url),
                 "resume": services.current_resume(student) is not None,
             }
